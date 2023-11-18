@@ -1,3 +1,4 @@
+import { ConnectWallet } from "../shared/connect-wallet"
 import { NetworkButton } from "./network-button"
 
 export interface NavBarProps
@@ -28,6 +29,7 @@ export const NavBar = ({ ...props }: NavBarProps) => {
                             </li>
                         </ul>
                         <NetworkButton />
+                        <ConnectWallet />
                     </div>
                 </div>
             </div>

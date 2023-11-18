@@ -21,6 +21,10 @@ body {
   font-family: var(--font-anonik) !important;
 }
 
+p {
+  margin-bottom: 16px;
+}
+
 .bg-primary {
   background-color: rgb(142, 174, 252) !important;
 }

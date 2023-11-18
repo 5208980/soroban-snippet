@@ -9,12 +9,14 @@ import oneLight from 'react-syntax-highlighter/dist/esm/styles/prism/one-light'
 export interface CodeBlockProps
     extends React.HTMLAttributes<HTMLDivElement> {
     code: string;
+    theme?: any;
     language?: string;
 }
 
 export const CodeBlock = ({
     code,
-    language
+    theme,
+    language,
 }: CodeBlockProps) => {
     const [codeStyle, setCodeStyle] = useState({} as any)
     // const { theme } = useTheme();
@@ -31,7 +33,7 @@ return (
         <ReactSyntaxHighlighter
             className="!bg-transparent"
             showLineNumbers={true}
-            language={language || "typescript"} style={oneLight}>
+            language={language || "typescript"} style={theme || oneLight} >
             {code}
         </ReactSyntaxHighlighter>
     </div>
