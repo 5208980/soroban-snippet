@@ -27,7 +27,7 @@ const sidebarData = {
         items: [
             { name: "Installing smart contract to Soroban DONE!", spec: <InstallingWasmToSoroban /> },
             { name: "Deploying your first smart contract DONE!", spec: <DeployYourFirstContract /> },
-            { name: "Invoke contract Transaction", spec: <InvokeContractCall /> },
+            { name: "Invoke contract Transaction DONE!", spec: <InvokeContractCall /> },
             { name: "Get WASM from contract", spec: <GetWasmFromContract /> },
             { name: "Get contract storage state", spec: <GetContractStorage />},
             { name: "Construct contract ABI", spec: <GetContractABI /> },
