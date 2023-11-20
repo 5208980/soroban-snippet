@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { InvokeContractCall } from "@/components/contract/invoke-contract-call";
-import { CreateContractOperation } from "@/components/operation/create-contract-operation";
 import { DeployYourFirstContract } from "../contract/deploy-your-first-contract";
 import { InstallingWasmToSoroban } from "../contract/installing-wasm-to-soroban";
 import { GasEstimation } from "../operation/gas-estimation";
@@ -13,7 +12,6 @@ import { ConvertCustomTypeToScVal } from "../operation/convert-custom-types-to-s
 import { GetContractABI } from "../contract/get-contract-abi";
 import { SubmitTransactionProcess } from "../operation/submit-transaction-process";
 import { ConnectToSoroban } from "../operation/connecting-to-soroban";
-import { InstallingWasmToSoroban2 } from "../operation/installing-wasm-to-soroban";
 import { ConvertXDRToTransactionEnvelope } from "../operation/convert-xdr-to-transaction-envelope";
 import { RestoreExpiredContractOrWasm } from "../contract/restore-contract-or-wasm";
 import { AuthorizeInvocation } from "../operation/authorize-invocation";
@@ -25,24 +23,24 @@ export interface MainProps
 const sidebarData = {
     contract: {
         items: [
-            { name: "Installing smart contract to Soroban DONE!", spec: <InstallingWasmToSoroban /> },
-            { name: "Deploying your first smart contract DONE!", spec: <DeployYourFirstContract /> },
-            { name: "Invoke contract Transaction DONE!", spec: <InvokeContractCall /> },
-            { name: "Get WASM from contract", spec: <GetWasmFromContract /> },
-            { name: "Get contract storage state", spec: <GetContractStorage />},
-            { name: "Construct contract ABI", spec: <GetContractABI /> },
-            { name: "Restore expired contract/WASM", spec: <RestoreExpiredContractOrWasm />},
+            { name: "Installing Contract/WASM to Soroban", spec: <InstallingWasmToSoroban /> },
+            { name: "JavaScript/TypeScript Soroban Contract Deployment", spec: <DeployYourFirstContract /> },
+            { name: "Execute Soroban Smart Contract", spec: <InvokeContractCall /> },
+            { name: "Retrieve WebAssembly (WASM) Code from Smart Contract", spec: <GetWasmFromContract /> },
+            { name: "Access Soroban Contract Storage State", spec: <GetContractStorage />},
+            { name: "Construct Soroban Contract ABI in JavaScript/TypeScript", spec: <GetContractABI /> },
+            { name: "Restore Expired Contract/WASM", spec: <RestoreExpiredContractOrWasm />},
         ]
     },
     operation: {
         items: [
-            { name: "Connecting to Soroban DONE!", spec: <ConnectToSoroban /> },
-            { name: "Gas Estimation on Soroban DONE!", spec: <GasEstimation /> },
+            { name: "Connecting to Soroban", spec: <ConnectToSoroban /> },
+            { name: "Gas Estimation on Soroban", spec: <GasEstimation /> },
             { name: "Authorise Invocation", spec: <AuthorizeInvocation />},
-            { name: "Converting Custom Rust Types to ScVal", spec: <ConvertCustomTypeToScVal /> },
+            { name: "Pratical Guide Custom Types to xdr in JavaScript/TypeScript", spec: <ConvertCustomTypeToScVal /> },
             { name: "Submit Transaction Process", spec: <SubmitTransactionProcess /> },
             { name: "Get Contract from Wrapped Asset", spec: <GetAssetContract /> },
-            { name: "Covert XDR to Transaction Envelope DONE!", spec: <ConvertXDRToTransactionEnvelope />}
+            { name: "Covert XDR to Transaction Envelope", spec: <ConvertXDRToTransactionEnvelope />}
         ]
     }
 }

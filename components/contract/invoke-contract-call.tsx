@@ -25,13 +25,16 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
 
-    const excute = async (fn: Function) => {
+    const excute = async (fn: Function, logger?: any) => {
+        const loggerRef = logger || consoleLogRef;
         try {
-            consoleLogRef.current?.clearConsole();
-            fn();
+            loggerRef.current?.clearConsole();
+            await fn();
         } catch (error) {
-            consoleLogRef.current?.appendConsole(error);
+            loggerRef.current?.appendConsole(`${error}`);
             console.log(error);
+        } finally {
+            loggerRef.current?.appendConsole("============ Done ============");
         }
     }
 
@@ -50,7 +53,7 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
 
     const sign = async (tx: string) => {
         // Soroban Snippet uses Freighter to sign transaction
-        consoleLogRef.current?.appendConsole("# Signing transaction with wallet ...");
+        consoleLogRef.current?.appendConsole("Signing transaction with wallet ...");
         return await signTransactionWithWallet(tx, publicKey, sdk.selectedNetwork);
     }
     //#endregion
@@ -64,7 +67,7 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
         const mintTo: xdr.ScVal = new Address("GBZV3NONYSUDVTEHATQO4BCJVFXJO3XQU5K32X3XREVZKSMMOZFO4ZXR").toScVal();
         const mintAmount: xdr.ScVal = nativeToScVal(1000, { type: "i128" });
         const args: xdr.ScVal[] = [mintTo, mintAmount];
-        consoleLogRef.current?.appendConsole(`# Calling ${method}(GBZV3NONYSUDVTEHATQO4BCJVFXJO3XQU5K32X3XREVZKSMMOZFO4ZXR, 1000)`);
+        consoleLogRef.current?.appendConsole(`Calling ${method}(GBZV3NONYSUDVTEHATQO4BCJVFXJO3XQU5K32X3XREVZKSMMOZFO4ZXR, 1000)`);
 
         const tx = await prepareContractCall(
             txBuilder, sdk.server, contractAddress,
@@ -76,21 +79,21 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
         if (SorobanRpc.GetTransactionStatus.SUCCESS === response.status) {
             response = response as SorobanRpc.GetSuccessfulTransactionResponse;
             console.log(response.returnValue);
-            consoleLogRef.current?.appendConsole(`# Contract call successful.`);
-            consoleLogRef.current?.appendConsole(`# Return value: ${response.returnValue?.switch().name || "scvVoid"}`);
+            consoleLogRef.current?.appendConsole(`Contract call successful.`);
+            consoleLogRef.current?.appendConsole(`Return value: ${response.returnValue?.switch().name || "scvVoid"}`);
         } else {
-            consoleLogRef.current?.appendConsole(`# Something went wrong`);
+            consoleLogRef.current?.appendConsole(`Something went wrong`);
         }
     }
 
     return (
         <div className="pb-32">
-            <Title>Invoking Soroban Smart Contracts</Title>
+            <Title>Execute Soroban Smart Contract </Title>
 
             <Header2>Introduction</Header2>
             <p>
-                In this section we'll learn how to call any Soroban smart contract using Javascript.
-                Leveraging the capabilities of the <Code>Contract</Code> class, we'll delve into
+                In this section we&apos;ll learn how to call any Soroban smart contract using Javascript.
+                Leveraging the capabilities of the <Code>Contract</Code> class, we&apos;ll delve into
                 interactive methods that facilitate seamless communication with the smart contract.
                 The upcoming code snippet will guide you through the invocation process,
                 starting with a demonstration in the command-line interface (CLI) and transitioning
@@ -127,8 +130,8 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
                         This part involves constructing a Stellar transaction for invocation.
                         Here we are using the <Code>contract.call(string, ...xdr.ScVal)</Code>
                         It is a operation hence we need to build a transaction up to be submitted
-                        to Soroban. In cases where the method doesn't need any params,
-                        you can simply call <Code>contract.call("methodName")</Code>.
+                        to Soroban. In cases where the method doesn&apos;t need any params,
+                        you can simply call <Code>contract.call(&quot;methodName&quot;)</Code>.
                     </p>
                     <CodeBlock code={sampleTransaction} />
                 </li>

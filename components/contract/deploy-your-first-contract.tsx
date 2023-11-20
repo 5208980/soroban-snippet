@@ -24,13 +24,16 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
 
-    const excute = async (fn: Function) => {
+    const excute = async (fn: Function, logger?: any) => {
+        const loggerRef = logger || consoleLogRef;
         try {
-            consoleLogRef.current?.clearConsole();
-            fn();
+            loggerRef.current?.clearConsole();
+            await fn();
         } catch (error) {
-            consoleLogRef.current?.appendConsole(error);
+            loggerRef.current?.appendConsole(`${error}`);
             console.log(error);
+        } finally {
+            loggerRef.current?.appendConsole("============ Done ============");
         }
     }
 
@@ -49,7 +52,7 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
 
     const sign = async (tx: string) => {
         // Soroban Snippet uses Freighter to sign transaction
-        consoleLogRef.current?.appendConsole("# Signing transaction with wallet ...");
+        consoleLogRef.current?.appendConsole("Signing transaction with wallet ...");
         return await signTransactionWithWallet(tx, publicKey, sdk.selectedNetwork);
     }
     //#endregion
@@ -68,13 +71,13 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
     }
 
     const handleInstallWASM = async (): Promise<string> => {
-        consoleLogRef.current?.appendConsole("# Step 1: Installing WASM ...");
+        consoleLogRef.current?.appendConsole("Step 1: Installing WASM ...");
         const xdr: string = await handleSampleUploadContractWasmOp();
         const response = await sign(xdr);
         const wasmId = await submitTxAndGetWasmId(
             response, sdk.server, sdk.selectedNetwork);
 
-        consoleLogRef.current?.appendConsole("# WASM Hash on Soroban:");
+        consoleLogRef.current?.appendConsole("WASM Hash on Soroban:");
         consoleLogRef.current?.appendConsole(wasmId);
 
         return wasmId;
@@ -86,7 +89,7 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
         const wasmId = await handleInstallWASM();
 
         // Step 2
-        consoleLogRef.current?.appendConsole("# Step 2: Deploying WASM ...");
+        consoleLogRef.current?.appendConsole("Step 2: Deploying WASM ...");
         const txBuilder = await initTxBuilder();
         const source: Account = await sdk.server.getAccount(publicKey);
 
@@ -101,16 +104,16 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
         const contractId = await submitTxAndGetContractId(
             response, sdk.server, sdk.selectedNetwork);
 
-        consoleLogRef.current?.appendConsole("# Contract Deploy to Soroban:");
+        consoleLogRef.current?.appendConsole("Contract Deploy to Soroban:");
         consoleLogRef.current?.appendConsole(sdk.util.toContractAddress(contractId));
-        consoleLogRef.current?.appendConsole(`# See on explorer: https://${sdk.selectedNetwork.network.toLocaleLowerCase()}.steexp.com/contract/${sdk.util.toContractAddress(contractId)}`);
+        consoleLogRef.current?.appendConsole(`See on explorer: https://${sdk.selectedNetwork.network.toLocaleLowerCase()}.steexp.com/contract/${sdk.util.toContractAddress(contractId)}`);
 
         return contractId;
     }
 
     return (
         <div className="pb-32">
-            <Title>Deploying your first contract</Title>
+            <Title>JavaScript/TypeScript Soroban Contract Deployment</Title>
 
             <Header2>Introduction</Header2>
             <p>
@@ -119,12 +122,16 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
 
                 This section is dedicated to guiding you through the process of implementing a
                 method to deploy a smart contract on the web.
-                Soroban smart contract, a fundamental step in leveraging the capabilities of the Soroban blockchain. To embark on this journey, you'll need two essential components: the WebAssembly (WASM) code representing your contract and the source account associated with its deployment. As we delve into the details, you'll gain valuable insights into the key elements required for a successful contract deployment on Soroban. Let's get started!
+                Soroban smart contract, a fundamental step in leveraging the capabilities of the Soroban blockchain. 
+                To embark on this journey, you&apos;ll need two essential components: the WebAssembly (WASM) 
+                code representing your contract and the source account associated with its deployment. 
+                As we delve into the details, you&apos;ll gain valuable insights into the key elements 
+                required for a successful contract deployment on Soroban. Let&apos;s get started!
             </p>
 
             <p>
                 The corresponding <Code>soroban-cli</Code> command to deploy a contract is.
-                Javascript as of current, doesn't support abstraction of deploying a contract.
+                Javascript as of current, doesn&apos;t support abstraction of deploying a contract.
                 Hence we will be using <Code>soroban-client</Code> to deploy a contract.
             </p>
             <CodeBlock language={"bash"} code={cliDeploy} />

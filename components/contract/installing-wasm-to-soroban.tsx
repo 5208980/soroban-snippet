@@ -24,16 +24,16 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
 
-    const excute = async (fn: Function) => {
+    const excute = async (fn: Function, logger?: any) => {
+        const loggerRef = logger || consoleLogRef;
         try {
-            consoleLogRef.current?.clearConsole();
+            loggerRef.current?.clearConsole();
             await fn();
         } catch (error) {
-            consoleLogRef.current?.appendConsole(error);
+            loggerRef.current?.appendConsole(`${error}`);
             console.log(error);
-        }
-        finally {
-            consoleLogRef.current?.appendConsole("============ Done ============");
+        } finally {
+            loggerRef.current?.appendConsole("============ Done ============");
         }
     }
 
@@ -56,7 +56,7 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
     //#endregion
 
     const handleSampleUploadContractWasmOp = async (): Promise<string> => {
-        consoleLogRef.current?.appendConsole("# Creating operation ...");
+        consoleLogRef.current?.appendConsole("Creating operation ...");
         const txBuilder = await initTxBuilder();
         const response = await fetch(`/api/token`, { method: 'POST', });
         const wasm = await response.blob();
@@ -72,22 +72,22 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
 
     const handleInstallWASM = async () => {
         const xdr: string = await handleSampleUploadContractWasmOp();
-        consoleLogRef.current?.appendConsole("# Signing transaction with wallet ...");
+        consoleLogRef.current?.appendConsole("Signing transaction with wallet ...");
         const response = await sign(xdr);
         const wasmId = await submitTxAndGetWasmId(
             response, sdk.server, sdk.selectedNetwork);
 
-        consoleLogRef.current?.appendConsole("# WASM Hash on Soroban:");
+        consoleLogRef.current?.appendConsole("WASM Hash on Soroban:");
         consoleLogRef.current?.appendConsole(wasmId);
     }
 
     return (
         <div className="pb-32">
-            <Title>Compiling your Soroban smart contract online</Title>
+            <Title>Installing Contract/WASM to Soroban</Title>
 
             <Header2>Introduction</Header2>
             <p>
-                In this section, we'll walk you through the essential steps of making sure
+                In this section, we&apos;ll walk you through the essential steps of making sure
                 your smart contract is ready for deployment on Soroban. <b>Note:</b> This
                 section is purely on installing a compiled smart contract onto Soroban. This
                 is different to deploying a smart contract, which is covered here: ... Installing
