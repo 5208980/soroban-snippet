@@ -5,6 +5,8 @@ import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
 import { Header3 } from "@/components/shared/header-3";
 import { UList } from "@/components/shared/u-list";
+import { Code } from "@/components/shared/code";
+import { Button } from "@/components/shared/button";
 
 export interface CreateContractOperationProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -95,9 +97,9 @@ export const CreateContractOperation = ({ }: CreateContractOperationProps) => {
             </p>
 
             <Header3>Transaction Submission:</Header3>
-            <pre><code>
+            <Code>
                 return tx;
-            </code></pre>
+            </Code>
             <p>
                 The prepared transaction is now ready to be submitted for execution. This could involve sending it to a Soroban-RPC server, initiating the contract invocation process.
             </p>
@@ -123,11 +125,11 @@ export const CreateContractOperation = ({ }: CreateContractOperationProps) => {
             </UList>
 
             <p>
-                Here, we initialize a Soroban smart contract by creating an instance of the <code>Contract</code> class. The <code>contractAddress</code> parameter represents the address of the deployed smart contract we want to interact with.
+                Here, we initialize a Soroban smart contract by creating an instance of the <Code>Contract</Code> class. The <Code>contractAddress</Code> parameter represents the address of the deployed smart contract we want to interact with.
             </p>
-            <button className="rounded-md bg-primary px-4 py-2.5" onClick={handleContractCall}>
+            <Button onClick={handleContractCall}>
                 Run
-            </button>
+            </Button>
         </div >
     )
 }
