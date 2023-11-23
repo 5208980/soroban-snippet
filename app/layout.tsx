@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ['latin'] })
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${anonik.variable} ${inter.className}`}>
+      <body className={`${anonik.variable} ${inter.className} max-h-screen overflow-y-hidden`}>
         <NetworkProvider>
           <WrapRoot>
             {children}
@@ -38,7 +38,7 @@ function WrapRoot({ children }: { children: React.ReactNode }) {
     <div>
       <NavBar />
       <SorosanProvider key={key} network={network.selectedNetwork as networkType}>
-        <div className="min-h-screen">
+        <div className="">
           {children}
         </div>
       </SorosanProvider>

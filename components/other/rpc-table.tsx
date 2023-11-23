@@ -24,8 +24,8 @@ const data = [
 export const RPCTable = ({ children, ...props }: RPCTableProps) => {
     return (
         <div className="relative overflow-x-auto">
-            <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 rounded">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 rounded">
+            <table className="w-full text-sm text-left rtl:text-right text-gray-500 rounded">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 rounded">
                     <tr>
                         <th scope="col" className="px-6 py-3">
                             Network
@@ -44,8 +44,8 @@ export const RPCTable = ({ children, ...props }: RPCTableProps) => {
                 <tbody>
                     {data.map(({ networkDetails, rpc }) => {
                         return (
-                            <tr key={rpc} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            <tr key={rpc} className="bg-white border-b ">
+                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                     {networkDetails.network}
                                 </th>
                                 <td className="px-6 py-4">

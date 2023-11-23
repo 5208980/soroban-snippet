@@ -103,14 +103,16 @@ export const changeTrust = async (
     txBuilder: TransactionBuilder,
     asset: Asset,
     limit: string,
+    distributorPubKey: string,
 ) => {
     const op = Operation.changeTrust({
         asset: asset,
         limit: limit,
+        source: distributorPubKey,
     });
     let tx: Transaction = txBuilder
         .addOperation(op)
-        .setTimeout(TimeoutInfinite)
+        .setTimeout(100)
         .build();
 
     return tx;

@@ -84,7 +84,7 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
 
     return (
         <div className="pb-32">
-            <Title>Convert XDR to TransactionEnvelope</Title>
+            <Title>Difference Transaction and Transaction Envelope</Title>
 
             <Header2>Introduction</Header2>
             <div>

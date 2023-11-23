@@ -19,7 +19,7 @@ export const Button = ({ override, children, ...props }: ButtonProps) => {
     }, [])
 
     return (
-        <button className={`rounded-md px-4 py-2.5 text-white ${(override ? true : publicKey) ? "bg-primary" : "bg-slate-300"} ${children}`}
+        <button className={`rounded-md px-4 py-2.5 text-white ${(override ? true : publicKey) ? "btn-primary": "bg-slate-300"} ${children}`}
             disabled={override ? false : !publicKey}
             {...props}>
             {!override

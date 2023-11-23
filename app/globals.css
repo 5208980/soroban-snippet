@@ -8,6 +8,26 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+@layer utilities {
+  .scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar::-webkit-scrollbar-track {
+    border-radius: 100vh;
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(203 213 225) !important;
+    border-radius: 100vh;
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(241 245 249) !important;
+  }
+}
+
+
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -25,8 +45,24 @@ p {
   margin-bottom: 16px;
 }
 
+.text-primary {
+  color: rgb(55, 112, 255) !important;
+}
+
 .bg-primary {
-  background-color: rgb(142, 174, 252) !important;
+  background-color: rgb(210, 224, 255) !important;
+}
+
+.bg-primary:hover {
+  background-color: rgb(179, 206, 255) !important;
+}
+
+.btn-primary {
+  background-color: rgb(55, 112, 255) !important;
+}
+
+.btn-primary:hover {
+  background-color: rgb(35, 104, 251) !important;
 }
 
 .code-bg {

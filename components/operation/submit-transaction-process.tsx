@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Server, SorobanRpc, TransactionBuilder } from "soroban-client";
+import { BASE_FEE, Server, SorobanRpc, Transaction, TransactionBuilder, xdr } from "soroban-client";
 import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -25,16 +25,16 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
 
-    const excute = async (fn: Function) => {
+    const excute = async (fn: Function, logger?: any) => {
+        const loggerRef = logger || consoleLogRef;
         try {
-            consoleLogRef.current?.clearConsole();
+            loggerRef.current?.clearConsole();
             await fn();
         } catch (error) {
-            consoleLogRef.current?.appendConsole(error);
+            loggerRef.current?.appendConsole(`${error}`);
             console.log(error);
-        }
-        finally {
-            consoleLogRef.current?.appendConsole("============ Done ============");
+        } finally {
+            loggerRef.current?.appendConsole("============ Done ============");
         }
     }
 
@@ -43,7 +43,7 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
             const { publicKey } = await getUserInfo();
             setPublicKey(publicKey);
         })();
-    }, []);
+    }, [])
 
     const initTxBuilder = async () => {
         return await initaliseTransactionBuilder(
@@ -52,6 +52,8 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
     }
 
     const sign = async (tx: string) => {
+        // Soroban Snippet uses Freighter to sign transaction
+        consoleLogRef.current?.appendConsole("Signing transaction with wallet ...");
         return await signTransactionWithWallet(tx, publicKey, sdk.selectedNetwork);
     }
     //#endregion
@@ -71,18 +73,21 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
 
             // Check if there is an error in the transaction submission.
             if (str.errorResult) {
-                console.error(str.errorResult.result());
+                consoleLogRef?.current.appendConsole(str.errorResult.result());
                 throw new Error("Error submitting transaction");
             }
 
             // Wait for the transaction to be confirmed.
             let gtr = await server.getTransaction(str.hash);
+            let count = 0;
             while (true) {
-                console.log("Waiting for transaction to be confirmed");
+                count += 1;
+                consoleLogRef?.current.appendConsole(`Waiting for transaction to be confirmed ${count}`);
                 gtr = await server.getTransaction(str.hash);
 
                 // Exit the loop when the transaction is no longer in the NOT_FOUND status.
                 if (gtr.status != SorobanRpc.GetTransactionStatus.NOT_FOUND) {
+                    consoleLogRef?.current.appendConsole(`Submission Complete! ${gtr.status}`);
                     break;
                 }
 
@@ -98,26 +103,52 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
         }
     };
 
-    const handleSampleSubmit = async (): Promise<string> => {
-        consoleLogRef.current?.appendConsole("# Creating and Signing Transaction ...");
+    const handleSampleSubmit = async () => {
+        const resp = await fetch(`/api/token`, { method: 'POST', });
+        const wasm = await resp.blob();
+        const wasmBuffer = Buffer.from(await wasm.arrayBuffer());
+        const txBuilder: TransactionBuilder = await initTxBuilder();
+        const server: Server = sdk.server;
 
-        return "";
+        // Here is the main part of the code
+        const tx: Transaction = await uploadContractWasmOp(
+            wasmBuffer,
+            txBuilder,
+            sdk.server,
+        );
+
+        // Soroban Snippet uses Freighter to sign transaction
+        const signedTx = await sign(tx.toXDR());
+
+        consoleLogRef?.current.appendConsole(`Submitting to Network ...`);
+        const response: SorobanRpc.GetTransactionResponse = await submitTx(
+            signedTx.tx, sdk.server, sdk.selectedNetwork);
+
+        consoleLogRef?.current.appendConsole(`Retrieving WASM ID from resultMetaXdr ...`);
+        if (response.status === SorobanRpc.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
+            const buff = Buffer.from(response.resultMetaXdr.toXDR("base64"), "base64");
+            const txMeta = xdr.TransactionMeta.fromXDR(buff);
+            const wasmId = txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";  // WasmID
+            consoleLogRef?.current.appendConsole(`WASM ID: ${wasmId}`);
+        }
     }
 
     return (
         <div className="pb-32">
-            <Title>Compiling your Soroban smart contract online</Title>
+            <Title>Submitting transaction to Soroban</Title>
 
             <Header2>Introduction</Header2>
             <div>
-                This section will cover how to install soroban smart contract onto Soroban.
-                This is important, as inorder to deploy an instance of a smart contract,
-                you need to compile it first and then obtain a wasm hash that will be used
-                to deploy the contract.
+                This section will guide developers through the steps of retrieving a response
+                after submitting a transaction to the network. We&apos;ll provide a brief overview of
+                the potential types of responses that a transaction to the network can yield.
+                Furthermore, we&apos;ll delve into the specifics of how to handle and respond to a
+                transaction&apos;s outcome in a decentralized application (dApp). This involves
+                extracting valuable information such as the return value, Wasm ID, contract ID,
+                and more. Many online examples follow a consistent pattern/implementation for this
+                process. Thanks to Soroban&apos;s efficiency, this procedure is swift and cost-effective,
+                making it straightforward to implement.
             </div>
-            <Header2>Prerequistes</Header2>
-            <p>This assume you have a compiled <Code>.wasm</Code> file that has been generated
-                from a Rust and <Code>Make</Code></p>
 
             <Header2>Looking at the response</Header2>
             <p>
@@ -126,7 +157,6 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
                 the transaction. All status type will contain,
                 Two main properties are <Code>status</Code> and <Code>returnValue?</Code>.
             </p>
-
             <UList>
                 <li>
                     <Header3>latestLedger: <Code>string</Code></Header3>
@@ -137,7 +167,6 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
                 </li>
             </UList>
             <CodeBlock code={`export type GetTransactionResponse = GetSuccessfulTransactionResponse | GetFailedTransactionResponse | GetMissingTransactionResponse;`} />
-
             <p>
                 In most case we want a transaction to be successfull, so we will be looking at the
                 <Code>GetSuccessfulTransactionResponse</Code> object.
@@ -151,51 +180,73 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
                 <li>
                     <Header3>resultXdr: <Code>xdr.TransactionResult</Code></Header3>
                     <p>
-                        This attribute represents the result of the transaction execution. 
+                        This attribute represents the result of the transaction execution.
                         It is a TransactionResult object that contains the result code and result XDR.
-                        This is important as it will contain the result of the transaction such as 
+                        This is important as it will contain the result of the transaction such as
                         being able to obtain WASM hashes and Contract Address.
                     </p>
                 </li>
                 <li>
                     <Header3>resultMetaXdr: <Code>xdr.TransactionMeta</Code></Header3>
                     <p>
-                        This attribute represents the metadata of the transaction execution. These are 
+                        This attribute represents the metadata of the transaction execution. These are
                         events from the conract and can be useful any contract events made by the transaction.</p>
                 </li>
                 <li>
                     <Header3>returnValue?: <Code>xdr.ScVal</Code></Header3>
                     <p>
-                        This optional attribute represents the return value of the transaction execution. 
+                        This optional attribute represents the return value of the transaction execution.
                         It is a ScVal object that contains the return value of the transaction and is useful
                         when wanting the return value of a method invocation.
                     </p>
                 </li>
             </UList>
 
-            <Header2>Usage</Header2>
+            <Header2>Submit Transaction</Header2>
             <p>
                 This is what a typical submission of a transaction will look like.
             </p>
-            <CodeBlock code={code} />
-            
+            <UList>
+                <li>
+                    <Header3>Error</Header3>
+                    <CodeBlock code={codeErrorResponse} />
+                </li>
+                <li>
+                    <Header3>WASM</Header3>
+                    <CodeBlock code={codeWasmResponse} />
+                </li>
+                <li>
+                    <Header3>Contract</Header3>
+                    <CodeBlock code={codeContractResponse} />
+
+                </li>
+                <li>
+                    <Header3>Function Return Value</Header3>
+                    <CodeBlock code={codeMethodResponse} />
+
+                </li>
+            </UList>
+
             <Header2>Usage</Header2>
             <p>Try out this code sample below</p>
             <p>
-                The provided code utilizes the Soroban blockchain client library to
-                interact with a Soroban blockchain. It begins by reading the content
-                of a WebAssembly (Wasm) smart contract file, &quot;soroban_token_contract.wasm&quot;,
-                using the fs.readFileSync method. Subsequently, it initializes a Soroban
-                transaction builder (txBuilder) by calling an asynchronous function
-                initialiseTransactionBuilder(). It then obtains a Soroban server instance
-                for the testnet environment using the getServer function. Finally, the
-                code invokes a custom asynchronous function uploadContractWasmOp to upload
-                the Wasm smart contract to the blockchain. The function takes the Wasm buffer,
-                the transaction builder, and the server as parameters, builds a transaction
-                that includes the contract upload operation, and returns the prepared
-                transaction for further processing.
+                The provided code implements a function named <Code>submitTx</Code> that facilitates
+                the submission of transactions to the Soroban blockchain. Following the successful
+                submission, the function enters a loop to wait for the transaction to be confirmed.
+                We can change to how and whenever we want to call periodically. In this example,
+                we will be check every 1 second until the status is no longer in the NOT_FOUND state,
+                signifying confirmation.
+
+                Upon successful confirmation, the function returns the final transaction result encapsulated
+                in a SorobanRpc.GetTransactionResponse object. In case of any errors, it&apos;ll throw and provide
+                the message to the developer.
             </p>
 
+            <Header2>Responses</Header2>
+            <p>
+                Here are some of the way to handle the response.
+            </p>
+            <Header3>Getting WASM ID (as shown in Usage)</Header3>
             <CodeBlock code={sampleUploadContractWasmOp} />
             <div className="flex space-x-2 my-4">
                 <Button onClick={() => excute(handleSampleSubmit)}>
@@ -275,21 +326,49 @@ const txBuilder: TransactionBuilder = await initaliseTransactionBuilder();
 const server: Server = getServer("testnet");
 
 // Here is the main part of the code
-const txBuilder: Transaction = await uploadContractWasmOp(
+const tx: Transaction = await uploadContractWasmOp(
     wasmBuffer,
     txBuilder,
     server,
 );
 
 // Soroban Snippet uses Freighter to sign transaction
-const signedTx = await signTransaction(txBuilder.toXDR());
+const signedTx = await signTransaction(tx.toXDR());
 
 const response: SorobanRpc.GetTransactionResponse = await submitTx(signedTx);
 
 if (response.status == SorobanRpc.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
     const buff = Buffer.from(response.resultMetaXdr.toXDR("base64"), "base64");
     const txMeta = xdr.TransactionMeta.fromXDR(buff);
-    const wasmId txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";  // WasmID
+    const wasmId = txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";  // WasmID
 }
 `.trim();
 
+const codeErrorResponse = `
+if (response.status === SorobanRpc.GetTransactionStatus.FAILED) {
+    throw new Error("Transaction Failed");
+}
+`.trim()
+
+const codeWasmResponse = `
+if (response.status === SorobanRpc.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
+    const buff = Buffer.from(response.resultMetaXdr.toXDR("base64"), "base64");
+    const txMeta = xdr.TransactionMeta.fromXDR(buff);
+    const wasmId = txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";  // WasmID
+}
+`.trim()
+
+const codeContractResponse = `
+if (gtr.status === SorobanRpc.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
+    const buff = Buffer.from(gtr.resultMetaXdr.toXDR("base64"), "base64");
+    const txMeta = xdr.TransactionMeta.fromXDR(buff);
+    const contractHash = txMeta.v3().sorobanMeta()?.returnValue().address().contractId().toString("hex") || "";   // ContractHash
+}
+`.trim()
+
+const codeMethodResponse = `
+if (gtr.status === SorobanRpc.GetTransactionStatus.SUCCESS) {
+    response = response as SorobanRpc.GetSuccessfulTransactionResponse;
+    const ret: xdr.ScVal = response.returnValue;
+} 
+`.trim()

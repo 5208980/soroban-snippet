@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { InvokeContractCall } from "@/components/contract/invoke-contract-call";
 import { DeployYourFirstContract } from "../contract/deploy-your-first-contract";
 import { InstallingWasmToSoroban } from "../contract/installing-wasm-to-soroban";
@@ -15,56 +15,96 @@ import { ConnectToSoroban } from "../operation/connecting-to-soroban";
 import { ConvertXDRToTransactionEnvelope } from "../operation/convert-xdr-to-transaction-envelope";
 import { RestoreExpiredContractOrWasm } from "../contract/restore-contract-or-wasm";
 import { AuthorizeInvocation } from "../operation/authorize-invocation";
-
+import { ContractEvents } from "../operation/contract-events";
+import { CreateWrappedAsset } from "../operation/create-wrapped-asset";
+import { CreateStellarAsset } from "../operation/create-stellar-asset";
+import { useRouter, useSearchParams } from 'next/navigation'
+import { hash } from "soroban-client";
+import { Spinner } from "../shared/spinner";
 export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const sidebarData = {
+    basic: {
+        items: [
+            { name: "Connecting to Soroban", spec: <ConnectToSoroban /> },
+            { name: "Gas Estimation on Soroban", spec: <GasEstimation /> },
+            { name: "Practical Guide Custom Types to xdr in JavaScript/TypeScript", spec: <ConvertCustomTypeToScVal /> },
+            { name: "Submit Transaction Process", spec: <SubmitTransactionProcess /> },
+            { name: "Difference Transaction and Transaction Envelope", spec: <ConvertXDRToTransactionEnvelope /> },
+            // { name: "Authorise Invocation", spec: <AuthorizeInvocation /> },
+            // { name: "Events", spec: <ContractEvents /> },
+        ]
+    },
+    asset: {
+        items: [
+            { name: "Create Stellar Asset", spec: <CreateStellarAsset /> },
+            { name: "Create Soroban Wrapped Asset", spec: <CreateWrappedAsset /> },
+            { name: "Get Contract from Wrapped Asset", spec: <GetAssetContract /> },
+        ]
+    },
     contract: {
         items: [
             { name: "Installing Contract/WASM to Soroban", spec: <InstallingWasmToSoroban /> },
             { name: "JavaScript/TypeScript Soroban Contract Deployment", spec: <DeployYourFirstContract /> },
             { name: "Execute Soroban Smart Contract", spec: <InvokeContractCall /> },
             { name: "Retrieve WebAssembly (WASM) Code from Smart Contract", spec: <GetWasmFromContract /> },
-            { name: "Access Soroban Contract Storage State", spec: <GetContractStorage />},
+            { name: "Access Soroban Contract Storage State", spec: <GetContractStorage /> },
             { name: "Construct Soroban Contract ABI in JavaScript/TypeScript", spec: <GetContractABI /> },
-            { name: "Restore Expired Contract/WASM", spec: <RestoreExpiredContractOrWasm />},
+            { name: "Restore Expired Contract/WASM", spec: <RestoreExpiredContractOrWasm /> },
         ]
     },
-    operation: {
-        items: [
-            { name: "Connecting to Soroban", spec: <ConnectToSoroban /> },
-            { name: "Gas Estimation on Soroban", spec: <GasEstimation /> },
-            { name: "Authorise Invocation", spec: <AuthorizeInvocation />},
-            { name: "Pratical Guide Custom Types to xdr in JavaScript/TypeScript", spec: <ConvertCustomTypeToScVal /> },
-            { name: "Submit Transaction Process", spec: <SubmitTransactionProcess /> },
-            { name: "Get Contract from Wrapped Asset", spec: <GetAssetContract /> },
-            { name: "Covert XDR to Transaction Envelope", spec: <ConvertXDRToTransactionEnvelope />}
-        ]
+}
+
+function searchByName(searchQuery: string, data: any): {name: string, spec: JSX.Element} {
+    for (const category in data) {
+        if (data.hasOwnProperty(category)) {
+            const items = data[category].items;
+
+            for (const item of items) {
+                if (hash(Buffer.from(item.name)).toString("hex") === searchQuery) {
+                    return item;
+                }
+            }
+        }
     }
+
+    // Return null if no match is found
+    return { name: "Connecting to Soroban", spec: <ConnectToSoroban /> };
 }
 
 export const Main = ({ children, ...props }: MainProps) => {
-    const [spec, setSpec] = useState<JSX.Element>(<ConnectToSoroban />);
-    const [selected, setSelected] = useState<string>("Connecting to Soroban");
+    const searchParams = useSearchParams()
+    const router = useRouter()
+
+    const [spec, setSpec] = useState<JSX.Element | null>(null);
+    const [selected, setSelected] = useState<string>("");
+
+    useEffect(() => {
+        const title = searchParams.get("title") || "4b494b00824d6be559221ddd2e36bda315250ffea230ab4ff654ed64a7a0fa12"
+        const item = searchByName(title, sidebarData)
+        handleSidebarClick(item);
+    }, []);
 
     const handleSidebarClick = (item: any) => {
+        const title = hash(Buffer.from(item.name)).toString("hex")
         setSelected(item.name);
         setSpec(item.spec);
+        router.push(`?title=${title}`);
     }
+
     return (
         <div className="grid grid-cols-12 min-h-screen">
-            <div className="col-span-12 lg:col-span-3 border-r pt-6 pl-6">
-                <div className="invisible lg:visible">
+            <div className="col-span-12 lg:col-span-3 border-r ml-4 mr-8">
+                <div className="max-h-screen overflow-y-scroll scrollbar py-4">
                     {Object.entries(sidebarData).map(([category, { items }]) => (
-                        <div key={category}>
+                        <div key={category} >
                             <div className="text-slate-500 font-bold uppercase tracking-wider">{category}</div>
                             <ul>
                                 {items.map((item, index) => (
-                                    <li className={`my-1 py-1 px-2 mr-2 rounded-md hover:bg-gray-100 cursor-pointer
-                                    ${(selected === item.name) && "bg-blue-100 text-blue-800 font-bold"}
-                                    `}
+                                    <li className={`my-2 px-4 h-11 flex items-center rounded-md hover:bg-gray-100 cursor-pointer
+                                        ${(selected === item.name) && "bg-blue-100 text-primary font-bold"}`}
                                         key={index}
                                         onClick={() => handleSidebarClick(item)}
                                     >{item.name}</li>
@@ -74,9 +114,13 @@ export const Main = ({ children, ...props }: MainProps) => {
                     ))}
                 </div>
             </div>
-            <div className="col-span-12 lg:col-span-9 px-16">
-                {spec}
+            <div className="col-span-12 lg:col-span-9">
+                <div className="max-h-screen overflow-y-scroll scrollbar">
+                    <div className="px-16">
+                        {spec ? spec : <Spinner />}
+                    </div>
+                </div>
             </div>
-        </div>
+        </div >
     )
 }

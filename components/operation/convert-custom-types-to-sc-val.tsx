@@ -106,7 +106,7 @@ export const ConvertCustomTypeToScVal = ({ }: ConvertCustomTypeToScValProps) => 
     }
     return (
         <div className="pb-32">
-            <Title>Pratical Guide Custom Types to xdr in JavaScript/TypeScript</Title>
+            <Title>Practical Guide Custom Types to xdr in JavaScript/TypeScript</Title>
 
             <Header2>Introduction</Header2>
             <p>

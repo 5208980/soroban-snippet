@@ -140,6 +140,7 @@ export const submitTx = async (
         }
 
         // Return the final transaction result after confirmation.
+        console.log(gtr)
         return gtr;
     } catch (e: any) {
         // Handle and rethrow any exceptions that occur during submission or confirmation.
