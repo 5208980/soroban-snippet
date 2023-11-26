@@ -68,7 +68,8 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
     const handleConnection = async () => {
         consoleLogRef.current?.appendConsole(`# Connecting to Soroban ${networkDetails.network.toLowerCase()} ...`);
         const server = new Server(getRPC(networkDetails) || RPC.Futurenet, {
-            allowHttp: networkDetails.networkUrl.startsWith("http://") })
+            allowHttp: networkDetails.networkUrl.startsWith("http://")
+        })
 
         const { status } = await server.getHealth();
         const { protocolVersion } = await server.getNetwork();
@@ -89,19 +90,19 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
 
             <Header2>Introduction</Header2>
             <div>
-                In this section, we&apos;ll guide you through setting up and connecting 
-                to the Stellar network. For comprehensive information, explore the 
-                RPC list documentation available at Soroban Reference - RPC List. 
-                Let&apos;s dive into the seamless connectivity to unlock the full potential 
+                In this section, we&apos;ll guide you through setting up and connecting
+                to the Stellar network. For comprehensive information, explore the
+                RPC list documentation available at Soroban Reference - RPC List.
+                Let&apos;s dive into the seamless connectivity to unlock the full potential
                 of Soroban! However, before we do, let&apos;s take a look at the network details here:
                 https://soroban.stellar.org/docs/reference/rpc-list
             </div>
 
             <Header2>Code</Header2>
             <p>
-                The table below shows the network details required to connect to Stellar 
+                The table below shows the network details required to connect to Stellar
                 networks. You can manual create <Code>enum</Code> to represent each information
-                like in the following Usage section. Alternatively, you can import the RPC 
+                like in the following Usage section. Alternatively, you can import the RPC
                 details from <Code>soroban-client</Code>
             </p>
             <RPCTable />

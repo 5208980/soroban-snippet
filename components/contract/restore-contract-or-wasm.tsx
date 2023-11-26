@@ -10,9 +10,10 @@ import { Header2 } from "@/components/shared/header-2";
 import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
-import { ConsoleLog } from "../shared/console-log";
+import { ConsoleLog } from "@/components/shared/console-log";
 import { Title } from "@/components/shared/title";
 import { getContract } from "@/utils/util";
+import { Header3 } from "@/components/shared/header-3";
 
 export interface RestoreExpiredContractOrWasmProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -157,7 +158,7 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
 
             <UList>
                 <li>
-                    <h3>Network and Key Setup</h3>
+                    <Header3>Network and Key Setup</Header3>
                     <p>
                         We first need the the wasm Hash in order to restore the contract code.
                         This will contain the wasm code that corresponds to the contract instance,
@@ -167,7 +168,7 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
                     </p>
                 </li>
                 <li>
-                    <h3>Transaction Building</h3>
+                    <Header3>Transaction Building</Header3>
                     <p>
                         Add an operation to restore the footprint using <Code>Operation.restoreFootprint({ })</Code>
                          and prepare the transaction for signing and submission to Soroban.

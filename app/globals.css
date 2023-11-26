@@ -57,7 +57,7 @@ p {
 }
 
 .btn-primary {
-  background-color: rgb(55, 112, 255) !important;
+  background-color: #0759e7 !important;
 }
 
 .btn-primary:hover {
@@ -67,3 +67,16 @@ p {
 .code-bg {
   background-color: rgb(250, 250, 250);
 }
+
+/* */
+.bg-main {
+  background-color: #f9faff !important;
+}
+
+.text-main {
+  color: #2043b5 !important;
+}
+
+.text-main-secondary {
+  color: #0759e7 !important;
+} 

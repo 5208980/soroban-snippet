@@ -6,7 +6,7 @@ import { DeployYourFirstContract } from "../contract/deploy-your-first-contract"
 import { InstallingWasmToSoroban } from "../contract/installing-wasm-to-soroban";
 import { GasEstimation } from "../operation/gas-estimation";
 import { GetWasmFromContract } from "../contract/get-wasm-from-contract";
-import { GetAssetContract } from "../operation/get-asset-contract";
+import { GetAssetContract } from "../asset/get-asset-contract";
 import { GetContractStorage } from "../contract/get-contract-storage";
 import { ConvertCustomTypeToScVal } from "../operation/convert-custom-types-to-sc-val";
 import { GetContractABI } from "../contract/get-contract-abi";
@@ -16,11 +16,12 @@ import { ConvertXDRToTransactionEnvelope } from "../operation/convert-xdr-to-tra
 import { RestoreExpiredContractOrWasm } from "../contract/restore-contract-or-wasm";
 import { AuthorizeInvocation } from "../operation/authorize-invocation";
 import { ContractEvents } from "../operation/contract-events";
-import { CreateWrappedAsset } from "../operation/create-wrapped-asset";
-import { CreateStellarAsset } from "../operation/create-stellar-asset";
+import { CreateWrappedAsset } from "../asset/create-wrapped-asset";
+import { CreateStellarAsset } from "../asset/create-stellar-asset";
 import { useRouter, useSearchParams } from 'next/navigation'
 import { hash } from "soroban-client";
 import { Spinner } from "../shared/spinner";
+import { Collapsible } from "../shared/collapsible";
 export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
 }
@@ -37,13 +38,6 @@ const sidebarData = {
             // { name: "Events", spec: <ContractEvents /> },
         ]
     },
-    asset: {
-        items: [
-            { name: "Create Stellar Asset", spec: <CreateStellarAsset /> },
-            { name: "Create Soroban Wrapped Asset", spec: <CreateWrappedAsset /> },
-            { name: "Get Contract from Wrapped Asset", spec: <GetAssetContract /> },
-        ]
-    },
     contract: {
         items: [
             { name: "Installing Contract/WASM to Soroban", spec: <InstallingWasmToSoroban /> },
@@ -55,9 +49,16 @@ const sidebarData = {
             { name: "Restore Expired Contract/WASM", spec: <RestoreExpiredContractOrWasm /> },
         ]
     },
+    asset: {
+        items: [
+            { name: "Create Stellar Asset", spec: <CreateStellarAsset /> },
+            { name: "Create Soroban Wrapped Asset", spec: <CreateWrappedAsset /> },
+            { name: "Get Contract from Wrapped Asset", spec: <GetAssetContract /> },
+        ]
+    },
 }
 
-function searchByName(searchQuery: string, data: any): {name: string, spec: JSX.Element} {
+function searchByName(searchQuery: string, data: any): { name: string, spec: JSX.Element } {
     for (const category in data) {
         if (data.hasOwnProperty(category)) {
             const items = data[category].items;
@@ -74,7 +75,7 @@ function searchByName(searchQuery: string, data: any): {name: string, spec: JSX.
     return { name: "Connecting to Soroban", spec: <ConnectToSoroban /> };
 }
 
-export const Main = ({ children, ...props }: MainProps) => {
+export const Main = ({ children, }: MainProps) => {
     const searchParams = useSearchParams()
     const router = useRouter()
 
@@ -96,22 +97,20 @@ export const Main = ({ children, ...props }: MainProps) => {
 
     return (
         <div className="grid grid-cols-12 min-h-screen">
-            <div className="col-span-12 lg:col-span-3 border-r ml-4 mr-8">
-                <div className="max-h-screen overflow-y-scroll scrollbar py-4">
-                    {Object.entries(sidebarData).map(([category, { items }]) => (
-                        <div key={category} >
-                            <div className="text-slate-500 font-bold uppercase tracking-wider">{category}</div>
-                            <ul>
-                                {items.map((item, index) => (
-                                    <li className={`my-2 px-4 h-11 flex items-center rounded-md hover:bg-gray-100 cursor-pointer
-                                        ${(selected === item.name) && "bg-blue-100 text-primary font-bold"}`}
-                                        key={index}
-                                        onClick={() => handleSidebarClick(item)}
-                                    >{item.name}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+            <div className="col-span-12 lg:col-span-3 border-r bg-main">
+                <div className="">
+                    <div className="max-h-screen overflow-y-scroll scrollbar py-4 pb-32">
+                        {Object.entries(sidebarData).map(([category, { items }], index) => (
+                            <div key={category} >
+                                <Collapsible 
+                                    // checked={index === 0}
+                                    isSelected={selected}
+                                    title={category} 
+                                    items={items} 
+                                    handleOnClick={handleSidebarClick}/>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
             <div className="col-span-12 lg:col-span-9">

@@ -227,6 +227,8 @@ const sampleContractStorage = `
 import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "soroban-client";
 
 const contractAddress: string = "CAEKJZUWNRUGTDINKFPYF5DVD5NIDJVROGL4A7P6KE6ZSH7SWIRGKZBM";
+
+// Here is the main part of the code
 const storage: xdr.ScMapEntry[] = await getContractStorage(contractAddress);
 
 storage.foreach(data => ({

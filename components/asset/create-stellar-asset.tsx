@@ -2,14 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { Asset, BASE_FEE, Keypair, SorobanRpc, hash, xdr } from "soroban-client";
-import { createHash } from "crypto";
-import { assetPayment, changeTrust, getAssetContractId, initaliseTransactionBuilder, signTransactionWithWallet, submitTx, submitTxAndGetWasmId, tipAccount, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { Asset, BASE_FEE, Keypair, SorobanRpc, xdr } from "soroban-client";
+import { assetPayment, changeTrust, initaliseTransactionBuilder, signTransactionWithWallet, submitTx, tipAccount } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
-import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
@@ -74,7 +71,7 @@ export const CreateStellarAsset = ({ }: CreateStellarAssetProps) => {
     }
     //#endregion
 
-    //#region Create Asset
+    //#region Helper Function
     const fundAsset = async (asset: Asset, limit: string): Promise<Asset | undefined> => {
         const txBuilder = await initTxBuilder();
         const tx = await assetPayment(txBuilder, publicKey, asset, limit);
@@ -146,7 +143,7 @@ export const CreateStellarAsset = ({ }: CreateStellarAssetProps) => {
 
         return;
     }
-    //#endregion Create Asset
+    //#endregion 
 
     const createAsset = async (
         assetCode: string,
@@ -209,6 +206,8 @@ export const CreateStellarAsset = ({ }: CreateStellarAssetProps) => {
                 interoperability within the Stellar ecosystem. The following writeup will
                 implement in Javascript/Typescript creating and deploying Wrapped Assets,
                 offering practical insights into the intricacies of asset creation and management.
+                For more details about Asset refer to the offical documentation:
+                https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets
             </p>
 
             <p>
@@ -217,24 +216,69 @@ export const CreateStellarAsset = ({ }: CreateStellarAssetProps) => {
             </p>
             <CodeBlock language={"bash"} code={cliCode} />
 
+            <p>
+                Stellar Assets are uniquely identified by the combination of an asset code
+                and the issuer&quot;s public key. While asset codes may be reused, the pairing
+                with the issuer&quot;s address ensures the asset&quot;s uniqueness. For instance, an
+                asset might be identified as
+                <Code>USDC:GCYEIQEWOCTTSA72VPZ6LYIZIK4W4KNGJR72UADIXUXG45VDFRVCQTYE</Code>
+            </p>
+
+            <p>
+                Creating a Stellar Asset involves the issuer transferring the
+                asset to a destination address through a transaction that includes a
+                payment operation. However, before receiving the asset, the destination
+                address must submit a change trust operation to accept a specific asset
+                not yet created. Following these steps results in the minting or creation
+                of the asset, thereby increasing the total supply. Here&quot;s how the two
+                operations look like:
+            </p>
+            <i>
+                Note: The following descriptions was directly taken from the Stellar documentation:
+                https://developers.stellar.org/docs/issuing-assets/how-to-issue-an-asset
+            </i>
+
             <Header2>Create Trustline</Header2>
+            <p>
+                An account must establish a trustline with the issuing account to hold
+                that account&quot;s asset. This is true for all assets except for Stellar&quot;s
+                native token, XLM.
+            </p>
             <CodeBlock code={codeTrustLine} />
 
             <Header2>Fund Asset</Header2>
+            <p>
+                Make a payment from issuing to distribution account, issuing the asset.
+                The payment operation is what actually issues (or mints) the asset.
+            </p>
             <CodeBlock code={codeFundAsset} />
-
             <Header2>Usage</Header2>
             <p>Try out this code sample below</p>
+            <p>
+                Combining the two operations above, requiring two signing from Freighter. Once they are
+                successful, the asset is created and ready to be used.
+            </p>
             <p>
                 FOR LEARNING PURPOSE this is a dummy account so you can use it to test out the code
                 do not use it in production or as primary account
             </p>
-            <div>{dummyAccount && dummyAccount.publicKey()}</div>
-            <Input type="text" onChange={(e) => setAssetCode(e.target.value)}
-                value={assetCode}
-                placeholder="Asset Code" />
+            <CodeBlock code={
+                `
+${sampleCreateAsset}
+
+const asset: Asset = await createAsset(${assetCode}, ${dummyAccount?.publicKey()}, "10000");
+`.trim()
+            } />
+
             <div className="flex space-x-2 my-4">
-                <Button onClick={() => excute(handleGetContract)}>
+                <Input type="text" onChange={(e) => setAssetCode(e.target.value)}
+                    value={assetCode}
+                    placeholder="Asset Code" />
+                <Input type="text" disabled={true}
+                    value={(dummyAccount && dummyAccount.publicKey()) || ""}  />
+            </div>
+            <div className="flex space-x-2 my-4">
+                <Button disabled={!dummyAccount} onClick={() => excute(handleGetContract)}>
                     Create Stellar Asset
                 </Button>
             </div>
@@ -251,6 +295,8 @@ soroban lab token wrap \\
 `.trim()
 
 const codeTrustLine = `
+import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "soroban-client";
+
 export const changeTrust = async (
     txBuilder: TransactionBuilder,
     asset: Asset,
@@ -272,6 +318,8 @@ export const changeTrust = async (
 `.trim();
 
 const codeFundAsset = `
+import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "soroban-client";
+
 export const assetPayment = async (
     txBuilder: TransactionBuilder,
     destination: string,
@@ -292,3 +340,40 @@ export const assetPayment = async (
 }
 `.trim();
 
+
+const sampleCreateAsset = `
+import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "soroban-client";
+
+// See the method for createAssetTrustline: ${""}
+// See the method for fundAsset: ${""}
+
+// Here is the main part of the code
+const createAsset = async (
+    assetCode: string,
+    issuerPublicKey: string,
+    limit: string = "10000000"
+): Promise<Asset | undefined> => {
+    const asset = new Asset(assetCode, issuerPublicKey);
+
+    try {
+        // 1. Create asset trustline
+        const trusted: boolean = await createAssetTrustline(asset, limit, dummyAccount);
+
+        if (!trusted) {
+            // Error with trustline
+            return;
+        }
+
+        // 2. Fund the asset
+        const fundedAsset: Asset = await fundAsset(asset, limit);
+
+        if (fundedAsset) {
+            return fundedAsset;
+        }
+    } catch (error) {
+        console.error("Asset creation failed:", error);
+    }
+
+    return;
+}
+`.trim()

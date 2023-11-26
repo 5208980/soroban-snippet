@@ -1,6 +1,7 @@
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { useEffect, useState } from "react";
 import { getPublicKey } from "@stellar/freighter-api";
+import { Button } from "./button";
 
 export interface ConnectWalletProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -35,8 +36,8 @@ export const ConnectWallet = ({ }: ConnectWalletProps) => {
     }
 
     return (
-        <button onClick={handleConnect}>
+        <Button override={true} onClick={handleConnect}>
             {address ? sdk.util.mask(address) : "Connect Wallet"}
-        </button>
+        </Button>
     )
 }

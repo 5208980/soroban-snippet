@@ -2,18 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { Asset, BASE_FEE, Keypair, SorobanRpc, hash, xdr } from "soroban-client";
-import { createHash } from "crypto";
-import { assetPayment, changeTrust, getAssetContractId, initaliseTransactionBuilder, signTransactionWithWallet, submitTx, submitTxAndGetWasmId, tipAccount, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { Asset, BASE_FEE, Keypair, SorobanRpc, StrKey, TransactionBuilder, xdr } from "soroban-client";
+import { assetPayment, changeTrust, createWrapTokenOp, getAssetContractId, hexToByte, initaliseTransactionBuilder, signTransactionWithWallet, submitTx, submitTxAndGetContractId, tipAccount } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
 import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
-import { ConsoleLog } from "../shared/console-log";
+import { ConsoleLog } from "@/components/shared/console-log";
 import { Title } from "@/components/shared/title";
+import { Input } from "@/components/shared/input";
 
 export interface CreateWrappedAssetProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -24,6 +23,22 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
     const { sdk } = useSorosanSDK();
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
+    const [dummyAccount, setDummyAccount] = useState<Keypair | null>(null);
+
+    const loadDummyAccount = async () => {
+        const sk = localStorage.getItem("SOROBANSNIPPETDUMMYACCOUNT");
+
+        if (!sk) {
+            const kp = Keypair.random();
+            localStorage.setItem("SOROBANSNIPPETDUMMYACCOUNT", kp.secret());
+            const response = await tipAccount(kp.publicKey(), "https://friendbot.stellar.org");
+            setDummyAccount(kp);
+        } else {
+            const kp = Keypair.fromSecret(sk);
+            const response = await tipAccount(kp.publicKey(), "https://friendbot.stellar.org");
+            setDummyAccount(Keypair.fromSecret(sk));
+        }
+    }
 
     const excute = async (fn: Function) => {
         try {
@@ -40,6 +55,7 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
 
     useEffect(() => {
         (async () => {
+            loadDummyAccount();     // don't need to await this
             const { publicKey } = await getUserInfo();
             setPublicKey(publicKey);
         })();
@@ -57,6 +73,41 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
     //#endregion
 
     //#region Create Asset
+    const createAsset = async (
+        assetCode: string,
+        limit: string = "10000000"
+    ): Promise<Asset | undefined> => {
+        if (dummyAccount === null) {
+            consoleLogRef.current?.appendConsole(`Error issuer`);
+            return;
+        }
+
+        const asset = new Asset(assetCode, dummyAccount.publicKey());
+        consoleLogRef.current?.appendConsole(`Creating asset: ${asset.getCode()}-${asset.getIssuer()}`);
+
+        try {
+            // Create asset trustline
+            consoleLogRef.current?.appendConsole(`Creating Trustline ...`);
+            const trusted: boolean = await createAssetTrustline(asset, limit, dummyAccount);
+
+            if (!trusted) {
+                return;
+            }
+
+            // Fund the asset
+            consoleLogRef.current?.appendConsole(`Funding Trustline ...`);
+            const fundedAsset = await fundAsset(asset, limit);
+
+            if (fundedAsset) {
+                return fundedAsset;
+            }
+        } catch (error) {
+            console.error("Asset creation failed:", error);
+        }
+
+        return;
+    }
+
     const fundAsset = async (asset: Asset, limit: string): Promise<Asset | undefined> => {
         const txBuilder = await initTxBuilder();
         const tx = await assetPayment(txBuilder, publicKey, asset, limit);
@@ -130,51 +181,15 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
     }
     //#endregion Create Asset
 
-    const createAsset = async (
-        assetCode: string,
-        limit: string = "10000000"
-    ): Promise<Asset | undefined> => {
-        const issuer: Keypair = Keypair.random();
-        const asset = new Asset(assetCode, issuer.publicKey());
-        consoleLogRef.current?.appendConsole(`Creating Asset: ${asset.getCode()}-${asset.getIssuer()}`);
-
-        const response = await tipAccount(issuer.publicKey(), "https://friendbot.stellar.org");
-        console.log(response);
-
-        console.log("Creating asset:", asset.getCode(), asset.getIssuer(), "with limit:", limit);
-        try {
-            // Create asset trustline
-            consoleLogRef.current?.appendConsole(`Creating asset trustline ...`);
-            const trusted: boolean = await createAssetTrustline(asset, limit, issuer);
-
-            if (!trusted) {
-                return;
-            }
-
-            // Fund the asset
-            consoleLogRef.current?.appendConsole(`funding trustline ...`);
-            const fundedAsset = await fundAsset(asset, limit);
-
-            if (fundedAsset) {
-                console.log("Asset creation successful:", fundedAsset.getCode(), fundedAsset.getIssuer());
-                return fundedAsset;
-            }
-        } catch (error) {
-            console.error("Asset creation failed:", error);
-        }
-
-        return;
-    }
-
-    const [assetCode, setAssetCode] = useState<string>("");
-    const [assetIssuer, setAssetIssuer] = useState<string>(publicKey);
+    const [assetCode, setAssetCode] = useState<string>("SORO");
     const [limit, setLimit] = useState<string>("10000000");
-
+    const [asset, setAsset] = useState<Asset | null>(null);
     const handleGetContract = async () => {
-        if (!assetCode) {
-            consoleLogRef.current?.appendConsole(`Asset Code is required`);
+        if (!dummyAccount) {
+            consoleLogRef.current?.appendConsole(`Error creating issuer`);
             return;
         }
+
         const asset: Asset = await createAsset(assetCode, limit) || Asset.native();
 
         if (asset.isNative()) {
@@ -182,7 +197,54 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
             return;
         }
 
+        setAsset(asset);
         consoleLogRef.current?.appendConsole(`Asset Created: ${asset.getCode()}-${asset.getIssuer()}`);
+    }
+
+    const wrapAsset = async () => {
+        if (!dummyAccount) {
+            consoleLogRef.current?.appendConsole(`Error creating issuer`);
+            return;
+        }
+
+        if (!asset) {
+            consoleLogRef.current?.appendConsole(`Please Create asset first`);
+            return;
+        }
+
+        consoleLogRef.current?.appendConsole(`Asset Created: ${asset.getCode()}-${asset.getIssuer()}`);
+
+        const contractId: string = getAssetContractId(asset, sdk.selectedNetwork.networkPassphrase);
+        const contractAddress: string = sdk.util.toContractAddress(contractId);
+        consoleLogRef.current?.appendConsole(`Predicted Asset Hash: ${contractId}`);
+        consoleLogRef.current?.appendConsole(`Predicted Asset Contract: ${contractAddress}`);
+
+        try {
+            consoleLogRef.current?.appendConsole(`Wrapping Asset ...`);
+            const txBuilder: TransactionBuilder = await initTxBuilder();
+            const tx = await createWrapTokenOp(
+                txBuilder,
+                sdk.server,
+                asset,
+                contractAddress
+            );
+
+            const signedTx = await sign(tx.toXDR());
+
+            const contractREsult = await submitTxAndGetContractId(
+                signedTx, sdk.server, sdk.selectedNetwork);
+
+            const contract_id = StrKey.encodeContract(hexToByte(contractREsult));
+
+            consoleLogRef.current?.appendConsole(`Wrapped Asset Hash: ${contractREsult}`);
+            consoleLogRef.current?.appendConsole(`Wrapped Asset Contract: ${contract_id}`);
+
+        } catch (e: any) {
+            consoleLogRef.current?.appendConsole(e);
+            if (e.toString().includes("ExistingValue")) {
+                consoleLogRef.current?.appendConsole(`Asset already wrapped`);
+            }
+        }
     }
 
     return (
@@ -199,6 +261,8 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
                 interoperability within the Stellar ecosystem. The following writeup will
                 implement in Javascript/Typescript creating and deploying Wrapped Assets,
                 offering practical insights into the intricacies of asset creation and management.
+                If you have not check out how to create a Stellar Asset, please check out
+                <a href="/asset/create-stellar-asset"> Creating Stellar Asset</a> first.
             </p>
 
             <p>
@@ -258,8 +322,19 @@ export const CreateWrappedAsset = ({ }: CreateWrappedAssetProps) => {
 
             <CodeBlock code={sampleUploadContractWasmOp} />
             <div className="flex space-x-2 my-4">
+                <Input type="text" onChange={(e) => setAssetCode(e.target.value)}
+                    value={assetCode}
+                    placeholder="Asset Code" />
+                <Input type="text" disabled={true}
+                    value={(dummyAccount && dummyAccount.publicKey()) || ""} />
+            </div>
+            <div className="flex space-x-2 my-4">
                 <Button onClick={() => excute(handleGetContract)}>
-                    Generate Operation XDR
+                    Create Stellar Asset
+                </Button>
+
+                <Button disabled={!asset} onClick={() => excute(wrapAsset)}>
+                    {!asset ? "Create Asset First" : "Wrap Asset"}
                 </Button>
             </div>
             <ConsoleLog ref={consoleLogRef} />
@@ -275,28 +350,45 @@ soroban lab token wrap \\
 `.trim()
 
 const code = `
-import { Asset, BASE_FEE, hash, xdr } from "soroban-client";
-import { createHash } from "crypto";
+import { Asset, BASE_FEE, Keypair, SorobanRpc, StrKey, TransactionBuilder, xdr } from "soroban-client";
 
-export const getAssetContractId = (
+export const createWrapTokenOp = async (
+    txBuilder: TransactionBuilder,
+    server: Server,
     asset: Asset,
-    networkPassphrase: string
+    contractId: string,
 ) => {
-    // A hex-encoded SHA-256 hash of this transaction’s XDR-encoded form.
-    const networkId = createHash('sha256').update(networkPassphrase).digest('hex');
-    const networkIdBuffer = Buffer.from(networkId, 'hex');
+    const addr = new Address(contractId);
 
-    const contractIdPreimage = xdr.ContractIdPreimage
-        .contractIdPreimageFromAsset(asset.toXDRObject());
-    const hashIDPreimage = new xdr.HashIdPreimageContractId({
-        networkId: networkIdBuffer,
-        contractIdPreimage: contractIdPreimage
+    const ledgerKey = new xdr.LedgerKeyContractData({
+        contract: addr.toScAddress(),
+        key: xdr.ScVal.scvLedgerKeyContractInstance(),
+        durability: xdr.ContractDataDurability.persistent(),
+        // bodyType: xdr.ContractEntryBodyType.dataEntry()
     });
-    const preimage = xdr.HashIdPreimage
-        .envelopeTypeContractId(hashIDPreimage);
 
-    const contractId = hash(preimage.toXDR()).toString('hex');
-    return contractId;
+    xdr.LedgerKey.contractData(ledgerKey);
+
+    const contractIdPreimageFromAddress = xdr.ContractIdPreimage
+        .contractIdPreimageFromAsset(asset.toXDRObject());
+    const contractArgs = new xdr.CreateContractArgs({
+        contractIdPreimage: contractIdPreimageFromAddress,
+        executable: xdr.ContractExecutable.contractExecutableToken(),
+    });
+
+    const hf = xdr.HostFunction.hostFunctionTypeCreateContract(contractArgs);
+    let op: any = Operation.invokeHostFunction({
+        func: hf,
+        auth: [],
+    });
+
+    let tx: Transaction = txBuilder
+        .addOperation(op)
+        .setTimeout(TimeoutInfinite)
+        .build();
+
+    tx = await server.prepareTransaction(tx) as Transaction;
+    return tx;
 }
 `.trim();
 

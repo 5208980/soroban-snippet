@@ -288,7 +288,7 @@ const createContractOp = async (
 `.trim();
 
 const sampleDeployContract = `
-import { Operation, Server, BASE_FEE, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Operation, Server, Networks, BASE_FEE, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
 import { getPublicKey, signTransaction } from "@stellar/freighter-api";
 
 // Simple function to initialise a TransactionBuilder
