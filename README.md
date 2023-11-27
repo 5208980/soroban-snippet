@@ -29,15 +29,7 @@ To get started with Soroban Snippet, follow these simple steps:
 
 4. **Contribute and Share:**
    Feel free to contribute your own tutorials or improvements to existing ones. This dapp, came from learning Soroban and Stellar by developers or its not 100% correct. If you like share your knowledge and experiences with the Soroban Snippet!
-
-## Table of Contents
-
-- [Setting Soroban and Freighter in JS/TS](tutorials/setting-up-soroban-and-freighter.md)
-- [Getting Gas Estimation in Soroban](tutorials/gas-estimation-in-soroban.md)
-- [Practical Guide: Custom Types to XDR in JavaScript/TypeScript](tutorials/custom-types-to-xdr.md)
-- [Submit Transaction Process](tutorials/submit-transaction-process.md)
-- [Difference: Transaction and Transaction Envelope](tutorials/difference-transaction-and-envelope.md)
-
+   
 ## Additional Resources
 
 Check out these additional resources to enhance your understanding of Dapp development on Soroban and Stellar:
