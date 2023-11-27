@@ -46,4 +46,3 @@ Check out these additional resources to enhance your understanding of Dapp devel
 - [Soroban Quest](https://quest.stellar.org/soroban)
 
 Happy coding! 🚀
-
