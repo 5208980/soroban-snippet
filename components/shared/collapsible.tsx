@@ -23,7 +23,6 @@ export const Collapsible = ({
     useEffect(() => {
         setOpen(checked);
         items.forEach((item) => {
-            console.log(isSelected)
             if (isSelected === item.name) {
                 setOpen(true);
             }

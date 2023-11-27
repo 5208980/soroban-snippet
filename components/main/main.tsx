@@ -2,26 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { InvokeContractCall } from "@/components/contract/invoke-contract-call";
-import { DeployYourFirstContract } from "../contract/deploy-your-first-contract";
-import { InstallingWasmToSoroban } from "../contract/installing-wasm-to-soroban";
-import { GasEstimation } from "../operation/gas-estimation";
-import { GetWasmFromContract } from "../contract/get-wasm-from-contract";
-import { GetAssetContract } from "../asset/get-asset-contract";
-import { GetContractStorage } from "../contract/get-contract-storage";
-import { ConvertCustomTypeToScVal } from "../operation/convert-custom-types-to-sc-val";
-import { GetContractABI } from "../contract/get-contract-abi";
-import { SubmitTransactionProcess } from "../operation/submit-transaction-process";
-import { ConnectToSoroban } from "../operation/connecting-to-soroban";
-import { ConvertXDRToTransactionEnvelope } from "../operation/convert-xdr-to-transaction-envelope";
-import { RestoreExpiredContractOrWasm } from "../contract/restore-contract-or-wasm";
-import { AuthorizeInvocation } from "../operation/authorize-invocation";
-import { ContractEvents } from "../operation/contract-events";
-import { CreateWrappedAsset } from "../asset/create-wrapped-asset";
-import { CreateStellarAsset } from "../asset/create-stellar-asset";
+import { DeployYourFirstContract } from "@/components/contract/deploy-your-first-contract";
+import { InstallingWasmToSoroban } from "@/components/contract/installing-wasm-to-soroban";
+import { GasEstimation } from "@/components/basic/gas-estimation";
+import { GetWasmFromContract } from "@/components/contract/get-wasm-from-contract";
+import { GetAssetContract } from "@/components/asset/get-asset-contract";
+import { GetContractStorage } from "@/components/contract/get-contract-storage";
+import { ConvertCustomTypeToScVal } from "@/components/basic/convert-custom-types-to-sc-val";
+import { GetContractABI } from "@/components/contract/get-contract-abi";
+import { SubmitTransactionProcess } from "@/components/basic/submit-transaction-process";
+import { ConnectToSoroban } from "@/components/basic/connecting-to-soroban";
+import { ConvertXDRToTransactionEnvelope } from "@/components/basic/convert-xdr-to-transaction-envelope";
+import { RestoreExpiredContractOrWasm } from "@/components/contract/restore-contract-or-wasm";
+import { AuthorizeInvocation } from "@/components/basic/authorize-invocation";
+import { ContractEvents } from "@/components/basic/contract-events";
+import { CreateWrappedAsset } from "@/components/asset/create-wrapped-asset";
+import { CreateStellarAsset } from "@/components/asset/create-stellar-asset";
 import { useRouter, useSearchParams } from 'next/navigation'
 import { hash } from "soroban-client";
-import { Spinner } from "../shared/spinner";
-import { Collapsible } from "../shared/collapsible";
+import { Spinner } from "@/components/shared/spinner";
+import { Collapsible } from "@/components/shared/collapsible";
+import { ValidationStellarInformation } from "@/components/basic/validation-stellar-information";
+
 export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
 }
@@ -34,8 +36,10 @@ const sidebarData = {
             { name: "Practical Guide Custom Types to xdr in JavaScript/TypeScript", spec: <ConvertCustomTypeToScVal /> },
             { name: "Submit Transaction Process", spec: <SubmitTransactionProcess /> },
             { name: "Difference Transaction and Transaction Envelope", spec: <ConvertXDRToTransactionEnvelope /> },
+            
+            { name: "Validating Stellar/Soroban Information", spec: <ValidationStellarInformation /> },
+            { name: "Emitting and Retrieving Events", spec: <ContractEvents /> },
             // { name: "Authorise Invocation", spec: <AuthorizeInvocation /> },
-            // { name: "Events", spec: <ContractEvents /> },
         ]
     },
     contract: {
@@ -102,12 +106,12 @@ export const Main = ({ children, }: MainProps) => {
                     <div className="max-h-screen overflow-y-scroll scrollbar py-4 pb-32">
                         {Object.entries(sidebarData).map(([category, { items }], index) => (
                             <div key={category} >
-                                <Collapsible 
+                                <Collapsible
                                     // checked={index === 0}
                                     isSelected={selected}
-                                    title={category} 
-                                    items={items} 
-                                    handleOnClick={handleSidebarClick}/>
+                                    title={category}
+                                    items={items}
+                                    handleOnClick={handleSidebarClick} />
                             </div>
                         ))}
                     </div>

@@ -1,41 +1,49 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Soroban Snippet - Dapp Development Tutorials for Soroban and Stellar Network
+
+## Introduction
+
+Soroban Snippet is your go-to resource for comprehensive tutorials and practical guides on developing decentralized applications (Dapps) on the Soroban and Stellar networks. Whether you're a beginner exploring the basics or an experienced developer seeking advanced insights, Soroban Snippet caters to all skill levels, providing a rich collection of tutorials and interactive examples.
+
+## Features
+
+- **Step-by-Step Tutorials:** Dive into a series of step-by-step tutorials that cover a range of topics, from setting up connections with Soroban networks to estimating gas costs and submitting transactions.
+
+- **Practical Code Snippets:** Each tutorial comes with practical code snippets that you can directly integrate into your Soroban applications, making the learning process hands-on and interactive.
+
+- **Comprehensive Guides:** Explore in-depth guides on various aspects of Dapp development, including setting up Soroban and Freighter, estimating gas costs, customizing types to XDR, and understanding the transaction process.
+
+- **Interactive Demos:** Take advantage of interactive demos that illustrate key concepts and provide a real-world understanding of building on the Soroban and Stellar networks.
 
 ## Getting Started
 
-First, run the development server:
+To get started with Soroban Snippet, follow these simple steps:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Install Freighter**
+   Most of the tutorials and demos in Soroban Snippet require Freighter extension Wallet. To install Freighter, visit the [Freighter website](https://www.freighter.app/) and follow the instructions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Explore Tutorials:**
+   Browse through the `tutorials` on the sidebar, include Basic to Getting Started with Soroban and Stellar Network.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Run Demos:**
+   Check out all (if not most) of the runnable code in each writeup. Each writeup (tutorial) comes with a code snippet that provides a detailed explanation of the demo and how to run it.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+4. **Contribute and Share:**
+   Feel free to contribute your own tutorials or improvements to existing ones. This dapp, came from learning Soroban and Stellar by developers or its not 100% correct. If you like share your knowledge and experiences with the Soroban Snippet!
 
-## Learn More
+## Table of Contents
 
-To learn more about Next.js, take a look at the following resources:
+- [Setting Soroban and Freighter in JS/TS](tutorials/setting-up-soroban-and-freighter.md)
+- [Getting Gas Estimation in Soroban](tutorials/gas-estimation-in-soroban.md)
+- [Practical Guide: Custom Types to XDR in JavaScript/TypeScript](tutorials/custom-types-to-xdr.md)
+- [Submit Transaction Process](tutorials/submit-transaction-process.md)
+- [Difference: Transaction and Transaction Envelope](tutorials/difference-transaction-and-envelope.md)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Additional Resources
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Check out these additional resources to enhance your understanding of Dapp development on Soroban and Stellar:
 
-## Deploy on Vercel
+- [Offical Soroban Docs](https://soroban.stellar.org/docs)
+- [Soroban Quest](https://quest.stellar.org/soroban)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Happy coding! 🚀
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-
-
-soroban events --rpc-url https://rpc-futurenet.stellar.org:443/ --start-ledger 1091000 --network-passphrase "Test SDF Future Network ; October 2022"
-
-soroban events --rpc-url https://rpc-futurenet.stellar.org:443/ --start-ledger 1092200 --network-passphrase "Test SDF Future Network ; October 2022"
