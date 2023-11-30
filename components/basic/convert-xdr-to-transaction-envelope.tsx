@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, xdr } from "soroban-client";
+import { BASE_FEE, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -14,6 +14,7 @@ import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
 import { toObject } from "@/utils/util";
+import { useRouter } from "next/navigation";
 
 export interface ConvertXDRToTransactionEnvelopeProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,6 +22,7 @@ export interface ConvertXDRToTransactionEnvelopeProps
 
 export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnvelopeProps) => {
     //#region Shared
+    const router = useRouter();
     const { sdk } = useSorosanSDK();
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
@@ -56,6 +58,7 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
     }
     //#endregion
 
+    const [tx, setTx] = useState<string>("");
     const handleSampleUploadContractWasmOp = async (): Promise<string> => {
         consoleLogRef.current?.appendConsole("# Creating operation ...");
         const txBuilder = await initTxBuilder();
@@ -70,6 +73,7 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
             wasmBuffer, txBuilder, sdk.server)
 
         consoleLogRef.current?.appendConsole(tx.toXDR());
+        setTx(tx.toXDR());
         return tx.toXDR();
     }
 
@@ -102,12 +106,12 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
             <p>Try out this code sample below</p>
             <p>
                 The provided code utilizes the Soroban XDR from a transaction
-                and converts to a TransactionEnvelope. If valid, this will allow 
+                and converts to a TransactionEnvelope. If valid, this will allow
                 the user to the transaction <b>and</b> its signature(s).
             </p>
             <p>
                 Note displaying the object will lag the browser, so it is recommended
-                to use the console to view the logged object. :) 
+                to use the console to view the logged object. :
             </p>
 
             <CodeBlock code={sampleUploadContractWasmOp} />
@@ -115,6 +119,9 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
                 <Button onClick={() => excute(handleInstallWASM)}>
                     Generate Operation XDR
                 </Button>
+                {/* <Button disabled={tx === ""} onClick={() => router.push(`https://laboratory.stellar.org/#xdr-viewer?input=${tx}`)}>
+                    View on Stellar Laboratory
+                </Button> */}
             </div>
             <ConsoleLog ref={consoleLogRef} />
         </div>
@@ -122,13 +129,13 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
 }
 
 const code = `
-import { xdr } from "soroban-client";
+import { xdr } from "stellar-sdk";
 
 const decodeTxnSorobanXdr = (str: string) => xdr.TransactionEnvelope.fromXDR(str, 'base64').v1().tx()
 `.trim();
 
 const sampleUploadContractWasmOp = `
-import { xdr } from "soroban-client";
+import { xdr } from "stellar-sdk";
 
 const decodeTxnSorobanXdr = (str: string) => xdr.TransactionEnvelope.fromXDR(str, 'base64').v1().tx()
 const xdr: string = await handleSampleUploadContractWasmOp();

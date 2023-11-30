@@ -2,21 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Contract, Memo, Networks, Server, SorobanRpc, TimeoutInfinite, TransactionBuilder, xdr } from "soroban-client";
-import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { initaliseTransactionBuilder, signTransactionWithWallet } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
-import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
-import { getContract } from "@/utils/util";
 import { NetworkDetails, RPC, TESTNET_DETAILS, getRPC } from "@/utils/network";
 import { RPCTable } from "../other/rpc-table";
-import { NetworkButtonProps } from "../main/network-button";
+import { SorobanRpc, Networks, BASE_FEE } from 'stellar-sdk';
+import { Reference } from "../shared/link";
+const { Server } = SorobanRpc;
 
 export interface ConnectToSorobanProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -67,7 +65,7 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
     const [networkDetails, setNetworkDetails] = useState<NetworkDetails>(TESTNET_DETAILS);
     const handleConnection = async () => {
         consoleLogRef.current?.appendConsole(`# Connecting to Soroban ${networkDetails.network.toLowerCase()} ...`);
-        const server = new Server(getRPC(networkDetails) || RPC.Futurenet, {
+        const server: SorobanRpc.Server = new Server(getRPC(networkDetails) || RPC.Testnet, {
             allowHttp: networkDetails.networkUrl.startsWith("http://")
         })
 
@@ -78,11 +76,8 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
     }
 
     const handleRpcLogs = async () => {
-        consoleLogRefRPC.current?.appendConsole(`# Futurenet: ${Networks.FUTURENET}`);
         consoleLogRefRPC.current?.appendConsole(`# Testnet: ${Networks.TESTNET}`);
         consoleLogRefRPC.current?.appendConsole(`# Mainnet (public): ${Networks.PUBLIC}`);
-        consoleLogRefRPC.current?.appendConsole(`# Sandbox: ${Networks.SANDBOX}`);
-        consoleLogRefRPC.current?.appendConsole(`# Standalone: ${Networks.STANDALONE}`);
     }
     return (
         <div className="pb-32">
@@ -95,7 +90,7 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
                 RPC list documentation available at Soroban Reference - RPC List.
                 Let&apos;s dive into the seamless connectivity to unlock the full potential
                 of Soroban! However, before we do, let&apos;s take a look at the network details here:
-                https://soroban.stellar.org/docs/reference/rpc-list
+                <Reference href="https://soroban.stellar.org/docs/reference/rpc-list" target="_blank">RPC List</Reference>
             </div>
 
             <Header2>Code</Header2>
@@ -103,7 +98,7 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
                 The table below shows the network details required to connect to Stellar
                 networks. You can manual create <Code>enum</Code> to represent each information
                 like in the following Usage section. Alternatively, you can import the RPC
-                details from <Code>soroban-client</Code>
+                details from <Code>stellar-sdk</Code>
             </p>
             <RPCTable />
 
@@ -134,24 +129,26 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
 }
 
 const rpcCode = `
-import { Networks } from soroban-client
+import { Networks } from 'stellar-sdk';
 
-console.log(Networks.FUTURENET);
 console.log(Networks.TESTNET);
 console.log(Networks.MAINNET);
 `.trim()
 
 const sampleConnection = `
+import { SorobanRpc } from 'stellar-sdk';
+const { Server } = SorobanRpc;
+
 enum RPC {
-    Mainnet = "https://rpc-mainnet.stellar.org/",   // Note Mainnet is not supported
+    Mainnet = "https://rpc-mainnet.stellar.org/",       
     Testnet = "https://soroban-testnet.stellar.org/",
-    Futurenet = "https://rpc-futurenet.stellar.org/"
+    Futurenet = "https://rpc-futurenet.stellar.org/"        // Note Futurenet will be deprecated
 }
 
 enum NetworkURL {
-    Mainnet = "https://horizon-mainnet.stellar.org",   // Note Mainnet is not supported
+    Mainnet = "https://horizon-mainnet.stellar.org",   
     Testnet = "https://soroban-testnet.stellar.org:443",
-    Futurenet = "https://rpc-futurenet.stellar.org:443"
+    Futurenet = "https://rpc-futurenet.stellar.org:443"     // Note Futurenet will be deprecated
 }
 
 // This is the main part of the code

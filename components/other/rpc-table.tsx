@@ -1,7 +1,12 @@
 "use client";
 
-import { FUTURENET_DETAILS, MAINNET_DETAILS, RPC, TESTNET_DETAILS } from "@/utils/network";
+import { MAINNET_DETAILS, Network, NetworkDetails, RPC, TESTNET_DETAILS } from "@/utils/network";
 import { useEffect, useState } from "react";
+export const FUTURENET_DETAILS: any = {
+    network: "FUTURENET",
+    networkUrl: "https://rpc-futurenet.stellar.org:443",
+    networkPassphrase: "Test SDF Future Network ; October 2022",
+};
 
 export interface RPCTableProps
     extends React.TableHTMLAttributes<HTMLTableElement> {
@@ -10,7 +15,7 @@ export interface RPCTableProps
 const data = [
     {
         networkDetails: FUTURENET_DETAILS,
-        rpc: RPC.Futurenet,
+        rpc: "https://rpc-futurenet.stellar.org/",
     },
     {
         networkDetails: TESTNET_DETAILS,

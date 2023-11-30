@@ -19,7 +19,7 @@ import { ContractEvents } from "@/components/basic/contract-events";
 import { CreateWrappedAsset } from "@/components/asset/create-wrapped-asset";
 import { CreateStellarAsset } from "@/components/asset/create-stellar-asset";
 import { useRouter, useSearchParams } from 'next/navigation'
-import { hash } from "soroban-client";
+import { hash } from "stellar-sdk";
 import { Spinner } from "@/components/shared/spinner";
 import { Collapsible } from "@/components/shared/collapsible";
 import { ValidationStellarInformation } from "@/components/basic/validation-stellar-information";

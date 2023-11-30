@@ -7,13 +7,14 @@ import { Header3 } from "@/components/shared/header-3";
 import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Title } from "@/components/shared/title";
-import { Account, Address, BASE_FEE, Contract, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, nativeToScVal, xdr } from "soroban-client";
+import { Address, BASE_FEE, SorobanRpc, TransactionBuilder, nativeToScVal, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, prepareContractCall, signTransactionWithWallet, submitTx } from "@/utils/soroban";
 import { getUserInfo } from "@stellar/freighter-api";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { getContract } from "@/utils/util";
+const { Server } = SorobanRpc;
 
 export interface InvokeContractCallProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -76,8 +77,8 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
         const signed = await sign(tx.toXDR());
         let response = await submitTx(signed.tx, sdk.server, sdk.selectedNetwork);
 
-        if (SorobanRpc.GetTransactionStatus.SUCCESS === response.status) {
-            response = response as SorobanRpc.GetSuccessfulTransactionResponse;
+        if (SorobanRpc.Api.GetTransactionStatus.SUCCESS === response.status) {
+            response = response as SorobanRpc.Api.GetSuccessfulTransactionResponse;
             console.log(response.returnValue);
             consoleLogRef.current?.appendConsole(`Contract call successful.`);
             consoleLogRef.current?.appendConsole(`Return value: ${response.returnValue?.switch().name || "scvVoid"}`);
@@ -102,7 +103,7 @@ export const InvokeContractCall = ({ }: InvokeContractCallProps) => {
 
             <p>
                 The following command is the <Code>soroban-cli</Code> command to
-                invoke a contract methods. Luckily <Code>soroban-client</Code> makes
+                invoke a contract methods. Luckily <Code>stellar-sdk</Code> makes
                 it easy to call a contract method. It calling <Code>mint</Code> method of the
                 the contract token <Code>CDES3YLWWIWGMWAT4IHYUB3B4MNQMPHE3UYBMWDLONUOEY3VRNISEQHK</Code>
             </p>
@@ -203,7 +204,7 @@ const initialiseTransactionBuilder = async (
 }
 
 // This connects to the testnet, but you can change it to appriopriate network
-const server: Server = new Server("https://soroban-testnet.stellar.org/", { 
+const server: SorobanRpcServer = new Server("https://soroban-testnet.stellar.org/", { 
                             allowHttp: true, });
 
 // Initialise a TxBuilder to build contract.call transaction
@@ -239,7 +240,7 @@ if (SorobanRpc.GetTransactionStatus.SUCCESS === response.status) {
 `.trim();
 
 const code = `
-import { Contract, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Contract, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 const invokeContractCall = async (
     txBuilder: TransactionBuilder,

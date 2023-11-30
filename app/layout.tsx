@@ -37,7 +37,7 @@ function WrapRoot({ children }: { children: React.ReactNode }) {
   return (
     <div>
       <NavBar />
-      <SorosanProvider key={key} network={network.selectedNetwork as networkType}>
+      <SorosanProvider key={key} network={(network.selectedNetwork as networkType) || "testnet"}>
         <div className="">
           {children}
         </div>

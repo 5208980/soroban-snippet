@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getUserInfo } from "@stellar/freighter-api";
-import { BASE_FEE, Keypair, StrKey, xdr } from "soroban-client";
+import { BASE_FEE, Keypair, StrKey, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, signTransactionWithWallet, uploadContractWasmOp } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -147,7 +147,7 @@ export const ValidationStellarInformation = ({ }: ValidationStellarInformationPr
 }
 
 const isValidEd25519PublicKeyCode = `
-import { StrKey, xdr } from "soroban-client";
+import { StrKey, xdr } from "stellar-sdk";
 
 const input: string = "GDJWYMKAHRUXYL7Y6FBSAJXWLYHI644K4KEORZBJ6SI2QZ2LPIZEB7XB"
 const isValid: Boolean = !StrKey.isValidEd25519PublicKey(input)
@@ -156,7 +156,7 @@ assert(isValid);    // Should be true
 }`.trim()
 
 const isValidEd25519SecretSeedCode = `
-import { StrKey, xdr } from "soroban-client";
+import { StrKey, xdr } from "stellar-sdk";
 
 const input: string = "GDJWYMKAHRUXYL7Y6FBSAJXWLYHI644K4KEORZBJ6SI2QZ2LPIZEB7XB"
 const isValid: Boolean = !StrKey.isValidEd25519SecretSeed(input)
@@ -165,7 +165,7 @@ assert(isValid);    // Should be true
 }`.trim()
 
 const isValidContractCode = `
-import { StrKey, xdr } from "soroban-client";
+import { StrKey, xdr } from "stellar-sdk";
 
 const input: string = "GDJWYMKAHRUXYL7Y6FBSAJXWLYHI644K4KEORZBJ6SI2QZ2LPIZEB7XB"
 const isValid: Boolean = !StrKey.isValidContract(input)

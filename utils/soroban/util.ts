@@ -1,6 +1,5 @@
 import { randomBytes } from "crypto";
-import { Address, Asset, nativeToScVal, xdr } from "soroban-client";
-import { Contract, StrKey } from "soroban-client";
+import { Address, Asset, Contract, StrKey, nativeToScVal, xdr } from "stellar-sdk";
 import { ExplorerService } from "../explorer";
 
 /**
@@ -52,13 +51,13 @@ export const isContractHash = (val: string): boolean => {
  * Requests test network funds for a given account address from a friendbot service.
  *
  * @param {string} address - The account address for which to request test network funds.
- * @param {string} [friendbot='https://friendbot-futurenet.stellar.org'] - The URL of the friendbot service.
+ * @param {string} [friendbot='https://friendbot.stellar.org'] - The URL of the friendbot service.
  *
  * @returns {Promise<any | null>} A promise that resolves to the response data from the friendbot, or `null` if an error occurs.
  */
 export const tipAccount = async (
     address: string,
-    friendbot: string = 'https://friendbot-futurenet.stellar.org'
+    friendbot: string = 'https://friendbot.stellar.org'
 ): Promise<any | null> => {
     try {
         const response = await fetch(

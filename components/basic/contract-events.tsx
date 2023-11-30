@@ -3,17 +3,16 @@
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
-import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Title } from "@/components/shared/title";
-import { Account, Address, BASE_FEE, Contract, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, nativeToScVal, xdr } from "soroban-client";
+import { BASE_FEE, SorobanRpc, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, prepareContractCall, signTransactionWithWallet, submitTx } from "@/utils/soroban";
 import { getUserInfo } from "@stellar/freighter-api";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { getContract, getIncrementContract } from "@/utils/util";
+import { Reference } from "../shared/link";
 
 export interface ContractEventsProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -64,27 +63,21 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
 
     const handleContractEvents = async () => {
         const ledger = await sdk.server.getLatestLedger();
-        const mintTopic = xdr.ScVal.scvSymbol("COUNTER").toXDR('base64')
-        // const bytes = xdr.ScVal.scvBytes(Buffer.from("1afdef028d2b7f8757b5208ae53c8a53f9234824db7544d80f6a18554db95310", "utf-8")).toXDR('base64');
-        const incrementTopic = xdr.ScVal.scvSymbol("increment").toXDR('base64')
+        // const mintTopic = xdr.ScVal.scvSymbol("COUNTER").toXDR('base64')
+        // const incrementTopic = xdr.ScVal.scvSymbol("increment").toXDR('base64')
 
-        // console.log(server.serverURL.toString())
-        // console.log(ledger.sequence);
-        // console.log(mintTopic);
-
-        // const server = new Server("https://rpc-futurenet.stellar.org:443");
-        // const data: Server.GetEventsRequest = {
-        //     startLedger: 1188007,
+        // const data: SorobanRpc.Server.GetEventsRequest = {
+        //     startLedger: ledger.sequence - 100,
         //     filters: [],
         // }
-        // const events: SorobanRpc.GetEventsResponse = await sdk.server.getEvents(data);
+        // const { events }: SorobanRpc.Api.GetEventsResponse = await sdk.server.getEvents(data);
 
         let requestBody = {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "getEvents",
             "params": {
-                "startLedger": (ledger.sequence - 100).toString(),
+                "startLedger": (ledger.sequence - 1000).toString(),
                 "filters": [],
             }
         }
@@ -97,16 +90,20 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
         })
         let events = await res.json()
 
+        console.log(events)
         if (events && events.result && events.result.events) {
+            const eventsData = events.result as SorobanRpc.Api.GetEventsResponse;    // EventResponse[]
+            const contractEvents = eventsData.events.filter((event) => event.type === "contract") || [];
+
+            // console.log(eventsData.events)
+            if (eventsData.events.length === 0) {
+                consoleLogRef.current?.appendConsole(`Try calling the increment function to see contract events`);
+                return;
+            }
+
             consoleLogRef.current?.appendConsole(`Found ${events.result.events.length} events`);
-            consoleLogRef.current?.appendConsole(`Displaying contract events only`);
-            consoleLogRef.current?.appendConsole(`\n`);
-
-            const eventsData = events.result as SorobanRpc.GetEventsResponse;
-            const contractEvents = eventsData.events.filter((event) => event.type === "contract")
-
-            contractEvents.forEach((event) => {
-                console.log(event);
+            consoleLogRef.current?.appendConsole(`Displaying first 5 events only`);
+            consoleLogRef.current?.appendConsole(`\n`); eventsData.events.slice(0, 5).forEach((event) => {
                 consoleLogRef.current?.appendConsole(`Event ${event.id} [${event.type.toUpperCase()}]:`);
                 consoleLogRef.current?.appendConsole(`Ledger: \t ${event.ledger} (closed at ${event.ledgerClosedAt})`);
                 consoleLogRef.current?.appendConsole(`Contract: \t 0x${event.contractId}`);
@@ -118,6 +115,7 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
 
                 const value = event.value as any
                 const val = xdr.ScVal.fromXDR(value.xdr as any, 'base64');
+                console.log(val.value()?.toString())
                 consoleLogRef.current?.appendConsole(`Value: \t  ${val.switch().name}(${val.value()?.toString()})`);
             })
 
@@ -127,7 +125,7 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
     }
 
     const deployEventContract = async () => {
-        // Deploy increment contract if needed
+        //#region Deploy increment contract if needed
         // const wasmId = "db21a5dd5882c0f76e25e28174d3f83f2d70f57f4837a3f26ca7bf812f7bfa11";
         // const r = await fetch(`/api/event`, { method: "POST", });
         // const wasm = await r.blob();
@@ -136,6 +134,7 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
         // const contractId = await sdk.contract.deploy(wasmId, publicKey);
         // const contractAddress = sdk.util.toContractAddress(contractId)
         // console.log(contractAddress)
+        //#endregion
 
         const contractAddress = await getIncrementContract(sdk.selectedNetwork.network);
         const txBuilder = await initTxBuilder();
@@ -145,11 +144,10 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
             method, []);
 
         const signed = await sign(tx.toXDR());
-
         let response = await submitTx(signed.tx, sdk.server, sdk.selectedNetwork);
 
-        if (SorobanRpc.GetTransactionStatus.SUCCESS === response.status) {
-            response = response as SorobanRpc.GetSuccessfulTransactionResponse;
+        if (SorobanRpc.Api.GetTransactionStatus.SUCCESS === response.status) {
+            response = response as SorobanRpc.Api.GetSuccessfulTransactionResponse;
             console.log(response.returnValue);
             consoleLogRef.current?.appendConsole(`Contract call successful.`);
             consoleLogRef.current?.appendConsole(`Return value: ${response.returnValue?.switch().name || "scvVoid"}`);
@@ -164,8 +162,9 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
 
             <Header2>Emitting Event</Header2>
             <p>
-                The following code snippet is from the <Code>event</Code> contract found here:
-                https://github.com/stellar/soroban-examples/blob/main/events/src/lib.rs#L12.
+                The following code snippet is from the <Code>event</Code> contract found
+                <Reference href="https://github.com/stellar/soroban-examples/blob/main/events/src/lib.rs#L12"
+                    target="_blank">here</Reference>.
             </p>
             <p>
                 It is simply a function that increment the contract state counter and emit an event
@@ -173,7 +172,7 @@ export const ContractEvents = ({ }: ContractEventsProps) => {
             </p>
             <CodeBlock code={incrementMethodCode} />
 
-            <Header2>Using <Code>soroban-client</Code></Header2>
+            <Header2>Using <Code>stellar-sdk</Code></Header2>
             <CodeBlock code={apiClient} />
 
             <Header2>Using RPC API</Header2>
@@ -225,7 +224,7 @@ pub fn increment(env: Env) -> u32 {
 `.trim()
 
 const apiClient = `
-import { SorobanRpc, Server, xdr } from "soroban-client";
+import { SorobanRpc, Server, xdr } from "stellar-sdk";
 
 // This connects to the testnet, but you can change it to appriopriate network
 const server: Server = new Server("https://soroban-testnet.stellar.org/", { 
@@ -243,10 +242,11 @@ const events: SorobanRpc.GetEventsResponse = await sdk.server.getEvents(data);
 `.trim();
 
 const apiCode = `
-import { SorobanRpc, Server, xdr } from "soroban-client";
+import { BASE_FEE, SorobanRpc, xdr } from "stellar-sdk";
+const { Server } = SorobanRpc;
 
 // This connects to the testnet, but you can change it to appriopriate network
-const server: Server = new Server("https://soroban-testnet.stellar.org/", { 
+const server: SorobanRpc.Server = new Server("https://soroban-testnet.stellar.org/", { 
                             allowHttp: true, });
 
 // Needed as a startLedger param for getEvents (-100 is to Buffer the ledger time)

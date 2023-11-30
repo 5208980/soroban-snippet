@@ -1,22 +1,16 @@
-import { scValToNative } from "soroban-client";
-
-export const getContract = async (network: string): Promise<string> => {
+export const getContract = (network: string = "testnet"): string => {
     switch (network.toLowerCase()) {
         case 'testnet':
-            return 'CDES3YLWWIWGMWAT4IHYUB3B4MNQMPHE3UYBMWDLONUOEY3VRNISEQHK';
-        case 'futurenet':
         default:
-            return 'CAEKJZUWNRUGTDINKFPYF5DVD5NIDJVROGL4A7P6KE6ZSH7SWIRGKZBM';
+            return 'CDPAEDELCWTQMZ4TOA767FC2NTLN6ZBC3V7LNH3IFTBMGFQQDFAOSYZQ';
     }
 }
 
-export const getIncrementContract = async (network: string): Promise<string> => {
+export const getIncrementContract = (network: string = "testnet"): string => {
     switch (network.toLowerCase()) {
         case 'testnet':
-            return 'CBSLYUH7FOTZBZSWZBEHOH7LZJV7YHT7OVNTBU4N7TVETGSO3W6C5T4F';
-        case 'futurenet':
         default:
-            return 'CANP33YCRUVX7B2XWUQIVZJ4RJJ7SI2IETNXKRGYB5VBQVKNXFJRBBG6';
+            return 'CAOSFIQ7QAHKUSQZW6OY3YJA6GJS2L7RJNOIC5X3D2WOA6OY3T6MKGLS';
     }
 }
 

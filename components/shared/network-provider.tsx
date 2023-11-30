@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-export type networkType = "futurenet" | "testnet" | "mainnet" | "custom";
+export type networkType = "testnet" | "mainnet";
 export const NetworkProvider = ({ children }: NetworkProviderProps) => {
-    const [selectedNetwork, setSelectedNetwork] = useState<networkType>("futurenet");
+    const [selectedNetwork, setSelectedNetwork] = useState<networkType>("testnet");
 
     const changeSelectedNetwork = (network: networkType) => {
         setSelectedNetwork(network);
@@ -25,7 +25,7 @@ interface NetworkProviderProps extends
 }
 
 export const NetworkContext = createContext({
-    selectedNetwork: "futurenet",
+    selectedNetwork: "testnet",
     changeSelectedNetwork: (network: networkType) => { }
 });
 

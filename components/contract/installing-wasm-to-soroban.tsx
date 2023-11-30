@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getUserInfo } from "@stellar/freighter-api";
-import { BASE_FEE, Networks } from "soroban-client";
+import { BASE_FEE, Networks, hash } from "stellar-sdk";
 import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -61,7 +61,8 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
         const response = await fetch(`/api/token`, { method: 'POST', });
         const wasm = await response.blob();
         const wasmBuffer = Buffer.from(await wasm.arrayBuffer());
-
+        const predefinedWasmHash: Buffer = hash(wasmBuffer);
+        
         // Here is the main part of the code
         const tx = await uploadContractWasmOp(
             wasmBuffer, txBuilder, sdk.server)
@@ -203,7 +204,7 @@ soroban contract install \\
 `.trim()
 
 const code = `
-import { Operation, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Operation, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 const uploadContractWasmOp = async (
     wasm: Buffer,
@@ -230,7 +231,7 @@ const uploadContractWasmOp = async (
 
 Networks
 const sampleUploadContractWasmOp = `
-import { Operation, Networks, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Operation, Networks, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { signTransaction } from "@stellar/freighter-api";
 
 // This connects to the testnet, but you can change it to appriopriate network

@@ -3,13 +3,12 @@ import {
     Memo,
     MemoType,
     Operation,
-    Server,
     SorobanRpc,
     Transaction,
     TransactionBuilder,
     scValToNative,
     xdr,
-} from "soroban-client";
+} from "stellar-sdk";
 import { NetworkDetails } from "../network";
 
 /**
@@ -58,21 +57,21 @@ export const signTransactionWithWallet = async (
  */
 export const simulateTx = async <T>(
     tx: Transaction<Memo<MemoType>, Operation[]>,
-    server: Server,
+    server: SorobanRpc.Server,
 ): Promise<T> => {
     try {
         // Simulate the transaction using the provided server.
         let response = await server.simulateTransaction(tx);
 
         // Check if the simulation result indicates an error and throw an error if needed.
-        if (SorobanRpc.isSimulationError(response)) {
-            response = response as SorobanRpc.SimulateTransactionErrorResponse;
+        if (SorobanRpc.Api.isSimulationError(response)) {
+            response = response as SorobanRpc.Api.SimulateTransactionErrorResponse;
             throw new Error(`Simulation Error: ${response.error}`);
         }
 
         // Check if the simulation result is a success or restore operation.
         // SorobanRpc.isSimulationSuccess(response) || SorobanRpc.isSimulationRestore(response);
-        response = response as SorobanRpc.SimulateTransactionSuccessResponse;
+        response = response as SorobanRpc.Api.SimulateTransactionSuccessResponse;
 
         // Extract the result from the simulation response.
         const scVal = response.result?.retval;
@@ -105,9 +104,9 @@ export const simulateTx = async <T>(
  */
 export const submitTx = async (
     txXDR: string,
-    server: Server,
+    server: SorobanRpc.Server,
     network: NetworkDetails,
-): Promise<SorobanRpc.GetTransactionResponse> => {
+): Promise<SorobanRpc.Api.GetTransactionResponse> => {
     try {
         // Deserialize the XDR transaction and set the network passphrase.
         const tx = TransactionBuilder.fromXDR(
@@ -131,7 +130,7 @@ export const submitTx = async (
             gtr = await server.getTransaction(str.hash);
 
             // Exit the loop when the transaction is no longer in the NOT_FOUND status.
-            if (gtr.status != SorobanRpc.GetTransactionStatus.NOT_FOUND) {
+            if (gtr.status != SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
                 break;
             }
 
@@ -140,7 +139,6 @@ export const submitTx = async (
         }
 
         // Return the final transaction result after confirmation.
-        console.log(gtr)
         return gtr;
     } catch (e: any) {
         // Handle and rethrow any exceptions that occur during submission or confirmation.
@@ -150,7 +148,7 @@ export const submitTx = async (
 
 export const submitTxAndGetContractId = async (
     signed: { status: string, tx: string },
-    server: Server,
+    server: SorobanRpc.Server,
     selectedNetwork: NetworkDetails,
 ): Promise<string> => {
     // If there is an error, the user likely canceled the transaction.
@@ -161,7 +159,7 @@ export const submitTxAndGetContractId = async (
     try {
         // Submit transaction
         const gtr = await submitTx(signed.tx, server, selectedNetwork);
-        if (gtr.status == SorobanRpc.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
+        if (gtr.status == SorobanRpc.Api.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
             // const buff = Buffer.from(gtr.resultMetaXdr, "base64");
             const buff = Buffer.from(gtr.resultMetaXdr.toXDR("base64"), "base64");
             const txMeta = xdr.TransactionMeta.fromXDR(buff);
@@ -176,7 +174,7 @@ export const submitTxAndGetContractId = async (
 
 export const submitTxAndGetWasmId = async (
     signed: { status: string, tx: string },
-    server: Server,
+    server: SorobanRpc.Server,
     selectedNetwork: NetworkDetails,
 ): Promise<string> => {
     // If there is an error, the user likely canceled the transaction.
@@ -188,18 +186,18 @@ export const submitTxAndGetWasmId = async (
     let wasmId: string = "";
     try {
         // Submit transaction
-        const gtr = await submitTx(signed.tx, server, selectedNetwork);
+        const gtr: SorobanRpc.Api.GetTransactionResponse = await submitTx(signed.tx, server, selectedNetwork);
 
         // Get the wasmId
-        if (gtr.status == SorobanRpc.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
+        if (gtr.status == SorobanRpc.Api.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
             const buff = Buffer.from(gtr.resultMetaXdr.toXDR("base64"), "base64");
             const txMeta = xdr.TransactionMeta.fromXDR(buff);
-            // const txMeta = xdr.TransactionMeta.fromXDR(getTXData.resultMetaXdr, "base64");
             return txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";
-        }
+        } 
+        return wasmId;
     } catch (e) {
         console.error(e);
     }
 
-    return "";
+    return wasmId;
 }

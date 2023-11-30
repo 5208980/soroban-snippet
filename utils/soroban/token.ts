@@ -1,17 +1,16 @@
 import {
-    Account,
     Address,
     Asset,
     Contract,
     Operation,
-    Server,
+    SorobanRpc,
     TimeoutInfinite,
     Transaction,
     TransactionBuilder,
     hash,
-    nativeToScVal,
     xdr
-} from "soroban-client";
+} from "stellar-sdk";
+
 import { simulateTx } from "./transaction";
 import { createHash } from "crypto";
 import { Network } from "../network";
@@ -19,7 +18,7 @@ import { Network } from "../network";
 export const getTokenSymbol = async (
     contractAddress: string,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => {
     const contract = new Contract(contractAddress);
     let tx: Transaction = txBuilder
@@ -34,7 +33,7 @@ export const getTokenSymbol = async (
 export const getTokenName = async (
     contractAddress: string,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => {
     const contract = new Contract(contractAddress);
     const tx = txBuilder
@@ -49,7 +48,7 @@ export const getTokenName = async (
 export const getTokenDecimals = async (
     contractAddress: string,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => {
     const contract = new Contract(contractAddress);
     const tx = txBuilder
@@ -65,7 +64,7 @@ export const getTokenBalance = async (
     contractAddress: string,
     address: string,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => {
     const params = [new Address(address).toScVal()];
     const contract = new Contract(contractAddress);
@@ -103,16 +102,14 @@ export const changeTrust = async (
     txBuilder: TransactionBuilder,
     asset: Asset,
     limit: string,
-    distributorPubKey: string,
 ) => {
     const op = Operation.changeTrust({
         asset: asset,
         limit: limit,
-        source: distributorPubKey,
     });
     let tx: Transaction = txBuilder
         .addOperation(op)
-        .setTimeout(100)
+        .setTimeout(TimeoutInfinite)
         .build();
 
     return tx;
@@ -143,23 +140,20 @@ export const assetPayment = async (
  */
 export const TOKEN_WASM_ID = {
     TESTNET: "07ec9b8333159ac477239ff1a54c6fc45c5817e03cf0f45b6c9e51727c0e3dc7",
-    FUTURENET: "07ec9b8333159ac477239ff1a54c6fc45c5817e03cf0f45b6c9e51727c0e3dc7",
 }
 
 /**
  * Get the WebAssembly (Wasm) ID for a specific network.
  *
- * @param {string} network - The network name (e.g., 'testnet', 'futurenet', 'mainnet').
+ * @param {string} network - The network name (e.g., 'testnet', 'mainnet').
  * @returns {string} The WebAssembly (Wasm) ID for the specified network.
  */
 export const getTokenWasmId = (network: string) => {
     switch (network) {
-        case Network.futurenet:
-            return TOKEN_WASM_ID.FUTURENET;
         case Network.testnet:
             return TOKEN_WASM_ID.TESTNET;
         case Network.mainnet:
         default:
-            return TOKEN_WASM_ID.FUTURENET;
+            return TOKEN_WASM_ID.TESTNET;
     }
 }

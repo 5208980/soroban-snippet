@@ -24,7 +24,6 @@
  * @module binascii
  * @see https://www.npmjs.com/package/binascii
  */
-
 const ba = (function () {
     var hexlify = function (str: string) {
         var result = '';

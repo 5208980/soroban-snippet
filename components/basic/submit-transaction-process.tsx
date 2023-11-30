@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Server, SorobanRpc, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { BASE_FEE, SorobanRpc, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -14,6 +14,7 @@ import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
 import { NetworkDetails } from "@/utils/network";
+const { Server } = SorobanRpc;
 
 export interface SubmitTransactionProcessProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -60,9 +61,9 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
 
     const submitTx = async (
         txXDR: string,
-        server: Server,
+        server: SorobanRpc.Server,
         network: NetworkDetails,
-    ): Promise<SorobanRpc.GetTransactionResponse> => {
+    ): Promise<SorobanRpc.Api.GetTransactionResponse> => {
         try {
             // Deserialize the XDR transaction and set the network passphrase.
             const tx = TransactionBuilder.fromXDR(
@@ -86,7 +87,7 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
                 gtr = await server.getTransaction(str.hash);
 
                 // Exit the loop when the transaction is no longer in the NOT_FOUND status.
-                if (gtr.status != SorobanRpc.GetTransactionStatus.NOT_FOUND) {
+                if (gtr.status != SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
                     consoleLogRef?.current.appendConsole(`Submission Complete! ${gtr.status}`);
                     break;
                 }
@@ -108,7 +109,6 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
         const wasm = await resp.blob();
         const wasmBuffer = Buffer.from(await wasm.arrayBuffer());
         const txBuilder: TransactionBuilder = await initTxBuilder();
-        const server: Server = sdk.server;
 
         // Here is the main part of the code
         const tx: Transaction = await uploadContractWasmOp(
@@ -121,11 +121,11 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
         const signedTx = await sign(tx.toXDR());
 
         consoleLogRef?.current.appendConsole(`Submitting to Network ...`);
-        const response: SorobanRpc.GetTransactionResponse = await submitTx(
+        const response: SorobanRpc.Api.GetTransactionResponse = await submitTx(
             signedTx.tx, sdk.server, sdk.selectedNetwork);
 
         consoleLogRef?.current.appendConsole(`Retrieving WASM ID from resultMetaXdr ...`);
-        if (response.status === SorobanRpc.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
+        if (response.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
             const buff = Buffer.from(response.resultMetaXdr.toXDR("base64"), "base64");
             const txMeta = xdr.TransactionMeta.fromXDR(buff);
             const wasmId = txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";  // WasmID
@@ -152,7 +152,7 @@ export const SubmitTransactionProcess = ({ }: SubmitTransactionProcessProps) => 
 
             <Header2>Looking at the response</Header2>
             <p>
-                From the <Code>soroban-client</Code> package, it seems that the response will return
+                From the <Code>stellar-sdk</Code> package, it seems that the response will return
                 a <Code>GetTransactionResponse</Code> object that contains information about
                 the transaction. All status type will contain,
                 Two main properties are <Code>status</Code> and <Code>returnValue?</Code>.
@@ -318,7 +318,7 @@ export const submitTx = async (
 `.trim();
 
 const sampleUploadContractWasmOp = `
-import { Operation, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Operation, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { signTransaction } from "@stellar/freighter-api";
 
 const wasmBuffer = fs.readFileSync("soroban_token_contract.wasm");

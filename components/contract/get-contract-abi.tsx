@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Contract, SorobanRpc, xdr } from "soroban-client";
-import { decodeContractSpecBuffer, hexToByte, initaliseTransactionBuilder, signTransactionWithWallet, structNameToXdr, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { BASE_FEE, Contract, SorobanRpc, xdr } from "stellar-sdk";
+import { decodeContractSpecBuffer, hexToByte, initaliseTransactionBuilder, signTransactionWithWallet, structNameToXdr } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
 import { Header3 } from "@/components/shared/header-3";
@@ -71,14 +71,14 @@ export const GetContractABI = ({ }: GetContractABIProps) => {
             })
         );
 
-        let ledgerEntries: SorobanRpc.GetLedgerEntriesResponse = await sdk.server.getLedgerEntries(contractData);
+        let ledgerEntries: SorobanRpc.Api.GetLedgerEntriesResponse = await sdk.server.getLedgerEntries(contractData);
 
 
         if (ledgerEntries == null || ledgerEntries.entries == null || ledgerEntries.entries.length == 0) {
             return null;
         }
 
-        let ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+        let ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
         const codeData = ledgerEntry.val.contractData();
 
         const contractInstance = codeData.val().instance();
@@ -96,7 +96,7 @@ export const GetContractABI = ({ }: GetContractABIProps) => {
             return null;
         }
 
-        ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+        ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
         const codeEntry = ledgerEntry.val;
         const wasmCode = codeEntry.contractCode().code().toString('hex');
         const wasmBytes = hexToByte(wasmCode)
@@ -183,7 +183,7 @@ export const GetContractABI = ({ }: GetContractABIProps) => {
                 In this section, we will delve into the construction of Soroban Contract ABI
                 using JavaScript/TypeScript. This is a more custom way to obtain the interface
                 of a Soroban contact that can be used to interact with the contract without the
-                need to manually construct the interface. It is similar to the <Code>soroban-client</Code>
+                need to manually construct the interface. It is similar to the <Code>stellar-sdk</Code>
                 {" "} <Code>inspect</Code> however, we have the ability to get the contract interface,
                 functions, meta, etc <b>of a contract</b> rather than just the WASM.
             </div>
@@ -316,7 +316,7 @@ soroban contract inspect \\
 `.trim()
 
 const code = `
-import { Contract, SorobanRpc, xdr } from "soroban-client";
+import { Contract, SorobanRpc, xdr } from "stellar-sdk";
 
 const getContractSpecs = async (
     wasmCode: Buffer
@@ -342,7 +342,7 @@ const getContractSpecs = async (
 `.trim();
 
 const sampleUploadContractWasmOp = `
-import { Transaction, xdr } from "soroban-client";
+import { Transaction, xdr } from "stellar-sdk";
 
 // Can also use a local .wasm file
 // const wasmBuffer = fs.readFileSync("soroban_token_contract.wasm");
@@ -416,7 +416,7 @@ const tryDecodeEntry = (bufferData: Uint8Array, offset: number) => {
 `.trim()
 
 const sampleStructSpec = `
-import { Transaction, xdr } from "soroban-client";
+import { Transaction, xdr } from "stellar-sdk";
 
 // Can also use a local .wasm file
 // const wasmBuffer = fs.readFileSync("soroban_token_contract.wasm");
