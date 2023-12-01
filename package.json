@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sorosan-sdk/react": "^0.2.1",
     "@stellar/freighter-api": "^1.7.1",
     "lucide-react": "^0.294.0",
     "next": "14.0.2",
