@@ -55,44 +55,45 @@ export const GasEstimation = ({ }: GasEstimationProps) => {
     //#endregion
 
     const handleGasEstimate = async () => {
+        const randomAddress = "GBHAOSNA7PJOGKWPAQ2VYAY4Y2VMA5LKOPQVCFRXJNJG5YXV4ELEX2GZ"
+        const amt = 1000;
         const contractAddress: string = await getContract(sdk.selectedNetwork.network);
         const method: string = "mint";
         const params: xdr.ScVal[] = [
-            sdk.nativeToScVal("GBHAOSNA7PJOGKWPAQ2VYAY4Y2VMA5LKOPQVCFRXJNJG5YXV4ELEX2GZ", "address"),
-            sdk.nativeToScVal(1000, "i128")
+            sdk.nativeToScVal(randomAddress, "address"),
+            sdk.nativeToScVal(amt, "i128")
         ];
         const contract = new Contract(contractAddress);
-        let txBuilder: TransactionBuilder = await initTxBuilder();
+        const memo = "Testing gas estimation"
 
+        let txBuilder: TransactionBuilder = await initTxBuilder();
         txBuilder = txBuilder
             .addOperation(contract.call(method, ...params))
             .setTimeout(TimeoutInfinite);
         // If you want to add memo
-        const memo = "Testing gas estimation"
         if (memo.length > 0) {
             txBuilder = txBuilder.addMemo(Memo.text(memo));
         }
         const tx: Transaction = txBuilder.build();
-        // const tx = await prepareContractCall(txBuilder, sdk.server, contractAddress, method, params);
-        console.log(tx);
+        // console.log(tx);
 
-        consoleLogRef.current?.appendConsole("# Stimulating mint('GBHAOSNA7PJOGKWPAQ2VYAY4Y2VMA5LKOPQVCFRXJNJG5YXV4ELEX2GZ', 1000) ...");
+        consoleLogRef.current?.appendConsole(`# Stimulating mint('${sdk.util.mask(randomAddress)}', ${amt}) ...`);
 
-        const sim: SorobanRpc.Api.SimulateTransactionResponse = await sdk.server.simulateTransaction(tx)
-        console.log(sim)
-
+        // const response: SorobanRpc.Api.SimulateTransactionResponse = await sdk.server.simulateTransaction(tx)
         // if (SorobanRpc.Api.isSimulationError(response)) {
         //     throw new Error(`Simulation Error: ${response.error}`);
         // }
-
-        // console.log(response)
         // const classicFeeNum = parseInt(raw.fee, 10) || 0;
         // const minResourceFeeNum = parseInt(response.minResourceFee, 10) || 0;
         // const fee = (classicFeeNum + minResourceFeeNum).toString();
 
-        // consoleLogRef.current?.appendConsole(`# Stimulated Minimum fee = ${minResourceFeeNum}`);
-        // consoleLogRef.current?.appendConsole(`# Estimated fee = Stimulated Minimum fee + transaction fee = ${classicFeeNum} + ${minResourceFeeNum} = ${fee}`);
-        // return fee;
+        const fee = await sdk.estimateGas(contractAddress, method, params);
+        const classicFeeNum = parseInt(tx.fee, 10) || 0;
+        const minResourceFeeNum = (parseInt(fee, 10) || 0) - classicFeeNum;
+
+        consoleLogRef.current?.appendConsole(`# Stimulated Minimum fee = ${minResourceFeeNum}`);
+        consoleLogRef.current?.appendConsole(`# Estimated fee = Stimulated Minimum fee + transaction fee = ${classicFeeNum} + ${minResourceFeeNum} = ${fee}`);
+        return fee;
     }
 
     return (

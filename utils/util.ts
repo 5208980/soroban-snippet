@@ -14,6 +14,14 @@ export const getIncrementContract = (network: string = "testnet"): string => {
     }
 }
 
+export const getRandContract = (network: string = "testnet"): string => {
+    switch (network.toLowerCase()) {
+        case 'testnet':
+        default:
+            return 'CDLQBWV77ZYL6RDEMOE5HYVANPL4QCL322HDP6LCCRRDCAQOXAIZHXCD';
+    }
+}
+
 export const toObject = (obj: any) => {
     return JSON.stringify(obj, (key, value) =>
         typeof value === 'bigint'

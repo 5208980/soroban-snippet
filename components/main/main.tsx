@@ -23,6 +23,8 @@ import { hash } from "stellar-sdk";
 import { Spinner } from "@/components/shared/spinner";
 import { Collapsible } from "@/components/shared/collapsible";
 import { ValidationStellarInformation } from "@/components/basic/validation-stellar-information";
+import { ConvertClientSDK } from "../basic/convert-client-sdk";
+import { PRNG } from "../basic/prng";
 
 export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -39,6 +41,8 @@ const sidebarData = {
             
             { name: "Validating Stellar/Soroban Information", spec: <ValidationStellarInformation /> },
             { name: "Emitting and Retrieving Events", spec: <ContractEvents /> },
+            { name: "soroban-client and stellar-sdk", spec: <ConvertClientSDK /> },
+            { name: "RNG in Soroban contracts", spec: <PRNG /> },
             // { name: "Authorise Invocation", spec: <AuthorizeInvocation /> },
         ]
     },

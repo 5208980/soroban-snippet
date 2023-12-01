@@ -15,6 +15,7 @@ import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
 import { toObject } from "@/utils/util";
 import { useRouter } from "next/navigation";
+import { Reference } from "../shared/link";
 
 export interface ConvertXDRToTransactionEnvelopeProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -67,13 +68,10 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
         const wasmBuffer = Buffer.from(await wasm.arrayBuffer());
 
         // Here is the main part of the code
-        consoleLogRef.current?.appendConsole("HERE");
-        console.log(wasmBuffer)
         const tx = await uploadContractWasmOp(
             wasmBuffer, txBuilder, sdk.server)
 
         consoleLogRef.current?.appendConsole(tx.toXDR());
-        setTx(tx.toXDR());
         return tx.toXDR();
     }
 
@@ -82,7 +80,7 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
     const handleInstallWASM = async () => {
         const xdr: string = await handleSampleUploadContractWasmOp();
         const tx: xdr.Transaction = decodeTxnSorobanXdr(xdr);
-        console.log(tx);
+        // console.log(tx);
         consoleLogRef.current?.appendConsole("# See Console for more Transaction and its signature");
     }
 
@@ -102,6 +100,14 @@ export const ConvertXDRToTransactionEnvelope = ({ }: ConvertXDRToTransactionEnve
             </div>
             <CodeBlock code={code} />
 
+            <Header2>Viewing XDR</Header2>
+            <p>
+                When you build an transaction envelope, you can view the XDR by calling <Code>toXDR()</Code> on the transaction envelope object. 
+                This will return a base64 encoded string of the transaction envelope XDR. Which can be view on
+                <Reference href="https://laboratory.stellar.org/#xdr-viewer?type=TransactionEnvelope&network=test" target="_blank">Stellar Laboratory</Reference> 
+                and select the <Code>TransactionEnvelope</Code> as its <b>xdr type</b>.
+
+            </p>
             <Header2>Usage</Header2>
             <p>Try out this code sample below</p>
             <p>

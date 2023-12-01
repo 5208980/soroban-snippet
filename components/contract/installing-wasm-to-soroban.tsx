@@ -23,6 +23,7 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
     const { sdk } = useSorosanSDK();
     const consoleLogRef = useRef({} as any);
     const [publicKey, setPublicKey] = useState<string>("");
+    const [wasm, setWASM] = useState<Blob>(new Blob());
 
     const excute = async (fn: Function, logger?: any) => {
         const loggerRef = logger || consoleLogRef;
@@ -41,6 +42,10 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
         (async () => {
             const { publicKey } = await getUserInfo();
             setPublicKey(publicKey);
+
+            const response = await fetch(`/api/token`, { method: 'POST', });
+            const wasm = await response.blob();
+            setWASM(new Blob([wasm], { type: "application/wasm" }));
         })();
     }, []);
 
@@ -58,11 +63,9 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
     const handleSampleUploadContractWasmOp = async (): Promise<string> => {
         consoleLogRef.current?.appendConsole("Creating operation ...");
         const txBuilder = await initTxBuilder();
-        const response = await fetch(`/api/token`, { method: 'POST', });
-        const wasm = await response.blob();
         const wasmBuffer = Buffer.from(await wasm.arrayBuffer());
         const predefinedWasmHash: Buffer = hash(wasmBuffer);
-        
+
         // Here is the main part of the code
         const tx = await uploadContractWasmOp(
             wasmBuffer, txBuilder, sdk.server)
@@ -74,9 +77,10 @@ export const InstallingWasmToSoroban = ({ }: InstallingWasmToSorobanProps) => {
     const handleInstallWASM = async () => {
         const xdr: string = await handleSampleUploadContractWasmOp();
         consoleLogRef.current?.appendConsole("Signing transaction with wallet ...");
-        const response = await sign(xdr);
-        const wasmId = await submitTxAndGetWasmId(
-            response, sdk.server, sdk.selectedNetwork);
+        // const response = await sign(xdr);
+        // const wasmId = await submitTxAndGetWasmId(
+        //     response, sdk.server, sdk.selectedNetwork);
+        const wasmId = await sdk.contract.deployWasm(wasm, publicKey);
 
         consoleLogRef.current?.appendConsole("WASM Hash on Soroban:");
         consoleLogRef.current?.appendConsole(wasmId);
@@ -204,12 +208,12 @@ soroban contract install \\
 `.trim()
 
 const code = `
-import { Operation, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
+import { Operation, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 const uploadContractWasmOp = async (
     wasm: Buffer,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => Promise<Transaction> {
     // This is the main part of the code
     // This builds InvokeHostFunctionOp operation with HostFunction hostFunctionTypeUploadContractWasm
@@ -231,15 +235,16 @@ const uploadContractWasmOp = async (
 
 Networks
 const sampleUploadContractWasmOp = `
-import { Operation, Networks, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
+import { Operation, Networks, SorobanRpc, Account, TimeoutInfinite, Transaction, TransactionBuilder, BASE_FEE, xdr } from "stellar-sdk";
 import { signTransaction } from "@stellar/freighter-api";
+const { Server } = SorobanRpc;
 
 // This connects to the testnet, but you can change it to appriopriate network
-const server: Server = new Server("https://soroban-testnet.stellar.org/", { 
+const server: SorobanRpc.Server = new Server("https://soroban-testnet.stellar.org/", { 
                             allowHttp: true, });
 
 // Initialise a TxBuilder to build hostFunctionTypeUploadContractWasm transaction
-const publicKey: string = "GDFNGTA..."
+const publicKey: string = "GC5S4C6LMT6BCCARUCK5MOMAS4H7OABFSZG2SPYOGUN2KIHN5HNNMCGL"
 const source: Account = await server.getAccount(publicKey);
 const txBuilder: TransactionBuilder =     
 return new TransactionBuilder(source, { 
@@ -261,10 +266,10 @@ const txBuilder: Transaction = await uploadContractWasmOp(
 const signedTx = await signTransaction(txBuilder.toXDR());
 
 // Submit transaction to Soroban
-const response: SorobanRpc.GetTransactionResponse = await submitTx(signedTx);
+const response: SorobanRpc.Api.GetTransactionResponse = await submitTx(signedTx);
 
 // Get the WasmID from the resultMetaXdr
-if (response.status == SorobanRpc.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
+if (response.status == SorobanRpc.Api.GetTransactionStatus.SUCCESS && response.resultMetaXdr) {
     const buff = Buffer.from(response.resultMetaXdr.toXDR("base64"), "base64");
     const txMeta = xdr.TransactionMeta.fromXDR(buff);
     const wasmId txMeta.v3().sorobanMeta()?.returnValue().bytes().toString("hex") || "";  // WasmID
