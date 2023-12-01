@@ -14,13 +14,14 @@ import { NetworkDetails, RPC, TESTNET_DETAILS, getRPC } from "@/utils/network";
 import { RPCTable } from "../other/rpc-table";
 import { SorobanRpc, Networks, BASE_FEE } from 'stellar-sdk';
 import { Reference } from "../shared/link";
+import { Header3 } from "../shared/header-3";
 const { Server } = SorobanRpc;
 
-export interface ConnectToSorobanProps
+export interface ConvertClientSDKProps
     extends React.HTMLAttributes<HTMLDivElement> {
 }
 
-export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
+export const ConvertClientSDK = ({ }: ConvertClientSDKProps) => {
     //#region Shared
     const { sdk } = useSorosanSDK();
     const consoleLogRef = useRef({} as any);
@@ -81,81 +82,75 @@ export const ConnectToSoroban = ({ }: ConnectToSorobanProps) => {
     }
     return (
         <div className="pb-32">
-            <Title>Connecting to Soroban</Title>
+            <Title>Migration between `soroban-client` to `stellar-sdk`</Title>
 
             <Header2>Introduction</Header2>
-            <div>
-                In this section, we&apos;ll guide you through setting up and connecting
-                to the Stellar network. For comprehensive information, explore the
-                RPC list documentation available at Soroban Reference - RPC List.
-                Let&apos;s dive into the seamless connectivity to unlock the full potential
-                of Soroban! However, before we do, let&apos;s take a look at the network details here:
-                <Reference href="https://soroban.stellar.org/docs/reference/rpc-list" target="_blank">RPC List</Reference>
-            </div>
+            <p>
+
+                This short section will detail the two JS library available when building with Soroban.
+                <Code>soroban-client</Code> and <Code>stellar-sdk</Code>. For dapps currently utilizing
+                <Code>soroban-client</Code> it would be beneficial to migrate to <Code>stellar-sdk</Code>
+                as freatures in <Code>soroban-client</Code> library has been merged into this stellar-sdk,
+                so you get all the features of both stellar and Soroban.
+            </p>
+
+            <p>
+                As of current (with Futurenet still available), <Code>soroban-client</Code> is beneficial with the support
+                to connect with Futurenet, so can use <Code>soroban-client</Code> if you want to connect to Futurenet.
+            </p>
 
             <Header2>Code</Header2>
             <p>
-                The table below shows the network details required to connect to Stellar
-                networks. You can manual create <Code>enum</Code> to represent each information
-                like in the following Usage section. Alternatively, you can import the RPC
-                details from <Code>stellar-sdk</Code>
+                The migration are very simple, the main features are imported the same, but for other noticable `Class` and `Types` such as,
+                <i>Note: This is not an exhaustive sample, rather things developers used often</i>
             </p>
-            <RPCTable />
 
-            <CodeBlock code={rpcCode} />
-            <div className="flex space-x-2 my-4">
-                <Button override={true} onClick={() => excute(handleRpcLogs, consoleLogRefRPC)}>
-                    Log RPC details
-                </Button>
-            </div>
-            <ConsoleLog ref={consoleLogRefRPC} />
+            <Header3>Server</Header3>
+            <CodeBlock code={serverCode} />
 
-            <Header2>Usage</Header2>
-            <p>Try out this code sample below</p>
-            <p>
-                The provided code snippet will allow you to connect to the Stellar
-                Testnet. You can also connect to the Mainnet or Futurenet by changing
-                the RPC network details.
-            </p>
-            <CodeBlock code={sampleConnection} />
-            <div className="flex space-x-2 my-4">
-                <Button override={true} onClick={() => excute(handleConnection)}>
-                    {`Connect to ${networkDetails.network}`}
-                </Button>
-            </div>
-            <ConsoleLog ref={consoleLogRef} />
+            <Header3>SorobanRpc</Header3>
+            <CodeBlock code={apiCode} />
+
+            <Header3>AssembleTransaction</Header3>
+            <CodeBlock code={assembleTransactionCode} />
         </div>
     )
 }
 
-const rpcCode = `
-import { Networks } from 'stellar-sdk';
+const serverCode = `
+// Using soroban-client
+// import { Server } from 'soroban-client';
+// const server: Server = new Server("https://soroban-testnet.stellar.org/", {
+//     allowHttp: true
+// })
 
-console.log(Networks.TESTNET);
-console.log(Networks.MAINNET);
-`.trim()
-
-const sampleConnection = `
+// Using stellar-sdk
 import { SorobanRpc } from 'stellar-sdk';
 const { Server } = SorobanRpc;
+const server: SorobanRpc.Server = new Server("https://soroban-testnet.stellar.org/", {
+    allowHttp: true
+})
+`.trim()
 
-enum RPC {
-    Mainnet = "https://rpc-mainnet.stellar.org/",       
-    Testnet = "https://soroban-testnet.stellar.org/",
-    Futurenet = "https://rpc-futurenet.stellar.org/"        // Note Futurenet will be deprecated
-}
+const apiCode = `
+// Using soroban-client
+// import { SorobanRpc } from 'soroban-client';
+const status = SorobanRpc.GetTransactionStatus.SUCCESS;
 
-enum NetworkURL {
-    Mainnet = "https://horizon-mainnet.stellar.org",   
-    Testnet = "https://soroban-testnet.stellar.org:443",
-    Futurenet = "https://rpc-futurenet.stellar.org:443"     // Note Futurenet will be deprecated
-}
-
-// This is the main part of the code
-const server = new Server(RPC.Testnet, {
-    allowHttp: NetworkURL.Testnet.startsWith("http://") })
-
-const { status } = await server.getHealth();            // Check if Soroban is up
-const { protocolVersion } = await server.getNetwork();  // Get Soroban protocol version
+// Using stellar-sdk
+import { SorobanRpc } from 'stellar-sdk';
+const status = SorobanRpc.Api.GetTransactionStatus.SUCCESS;
 `.trim();
 
+const assembleTransactionCode = `
+// Using soroban-client
+// import { assembleTransaction } from 'soroban-client';
+const tx: Transaction = new Transaction();
+const status = assembleTransaction(tx);
+
+// Using stellar-sdk
+import { SorobanRpc } from 'stellar-sdk';
+const { assembleTransaction } = SorobanRpc;
+const tx: Transaction = new Transaction();
+const status = assembleTransaction(tx);
+`.trim();

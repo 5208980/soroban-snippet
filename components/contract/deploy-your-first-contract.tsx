@@ -12,7 +12,7 @@ import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
 import { createContractOp, initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetContractId, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
-import { Account, BASE_FEE, Transaction } from "soroban-client";
+import { Account, BASE_FEE, Transaction } from "stellar-sdk";
 
 export interface DeployYourFirstContractProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -93,16 +93,16 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
         const txBuilder = await initTxBuilder();
         const source: Account = await sdk.server.getAccount(publicKey);
 
+        const contractId = await sdk.contract.deploy(wasmId, publicKey);
         // Here is the main part of the code
-        const tx = await createContractOp(
-            wasmId, source, txBuilder, sdk.server);
-            
-        consoleLogRef.current?.appendConsole(tx.toXDR());
+        // const tx = await createContractOp(
+        //     wasmId, source, txBuilder, sdk.server);
+        // consoleLogRef.current?.appendConsole(tx.toXDR());
 
         // Soroban Snippet uses Freighter to sign transaction
-        const response = await sign(tx.toXDR());
-        const contractId = await submitTxAndGetContractId(
-            response, sdk.server, sdk.selectedNetwork);
+        // const response = await sign(tx.toXDR());
+        // const contractId = await submitTxAndGetContractId(
+        //     response, sdk.server, sdk.selectedNetwork);
 
         consoleLogRef.current?.appendConsole("Contract Deploy to Soroban:");
         consoleLogRef.current?.appendConsole(sdk.util.toContractAddress(contractId));
@@ -132,7 +132,7 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
             <p>
                 The corresponding <Code>soroban-cli</Code> command to deploy a contract is.
                 Javascript as of current, doesn&apos;t support abstraction of deploying a contract.
-                Hence we will be using <Code>soroban-client</Code> to deploy a contract.
+                Hence we will be using <Code>stellar-sdk</Code> to deploy a contract.
             </p>
             <CodeBlock language={"bash"} code={cliDeploy} />
 
@@ -193,10 +193,10 @@ export const DeployYourFirstContract = ({ }: DeployYourFirstContractProps) => {
             </UList>
 
             <p>
-                To build this in on the web and you can use <Code>soroban-client</Code>
+                To build this in on the web and you can use <Code>stellar-sdk</Code>
                 to deploy a contract. The following TypeScript code snippet showcases the invocation of a
                 You will need to compile a wasm file. You can found a guide to compiling using
-                <Code>soroban-client</Code> here:
+                <Code>stellar-sdk</Code> here:
             </p>
 
             <Header2>Usage</Header2>
@@ -238,7 +238,7 @@ soroban contract deploy \\
 `.trim()
 
 const code = `
-import { Account, Address, Operation, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Account, Address, Operation, Server, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { randomBytes } from "crypto";
 
 const createContractOp = async (
@@ -288,7 +288,7 @@ const createContractOp = async (
 `.trim();
 
 const sampleDeployContract = `
-import { Operation, Server, Networks, BASE_FEE, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Operation, Server, Networks, BASE_FEE, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { getPublicKey, signTransaction } from "@stellar/freighter-api";
 
 // Simple function to initialise a TransactionBuilder

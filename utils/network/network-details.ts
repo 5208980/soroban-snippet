@@ -1,5 +1,5 @@
 export interface NetworkDetails {
-    network: "FUTURENET" | "TESTNET" | "MAINNET";
+    network: "TESTNET" | "MAINNET";
     networkUrl: string;
     networkPassphrase: string;
 }

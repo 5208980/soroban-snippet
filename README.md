@@ -1,4 +1,4 @@
-# Soroban Snippet - Dapp Development Tutorials for Soroban and Stellar Network
+# Soroban Snippet - Dapp Development Tutorials for Soroban and Stellar Network (Stellar SDK)
 
 ## Introduction
 

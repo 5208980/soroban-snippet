@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Contract, Memo, SorobanRpc, TimeoutInfinite, TransactionBuilder, xdr } from "soroban-client";
-import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { BASE_FEE, Contract, Memo, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr, } from "stellar-sdk";
+import { initaliseTransactionBuilder, prepareContractCall, signTransactionWithWallet } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
-import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
@@ -47,7 +45,7 @@ export const GasEstimation = ({ }: GasEstimationProps) => {
 
     const initTxBuilder = async () => {
         return await initaliseTransactionBuilder(
-            publicKey, BASE_FEE, sdk.server,
+            "GC5S4C6LMT6BCCARUCK5MOMAS4H7OABFSZG2SPYOGUN2KIHN5HNNMCGL", BASE_FEE, sdk.server,
             sdk.selectedNetwork.networkPassphrase);
     }
 
@@ -57,38 +55,41 @@ export const GasEstimation = ({ }: GasEstimationProps) => {
     //#endregion
 
     const handleGasEstimate = async () => {
+        const randomAddress = "GBHAOSNA7PJOGKWPAQ2VYAY4Y2VMA5LKOPQVCFRXJNJG5YXV4ELEX2GZ"
+        const amt = 1000;
         const contractAddress: string = await getContract(sdk.selectedNetwork.network);
         const method: string = "mint";
         const params: xdr.ScVal[] = [
-            sdk.nativeToScVal("GBHAOSNA7PJOGKWPAQ2VYAY4Y2VMA5LKOPQVCFRXJNJG5YXV4ELEX2GZ", "address"),
-            sdk.nativeToScVal(1000, "i128"),
+            sdk.nativeToScVal(randomAddress, "address"),
+            sdk.nativeToScVal(amt, "i128")
         ];
         const contract = new Contract(contractAddress);
-        const txBuilder: TransactionBuilder = await initTxBuilder();
+        const memo = "Testing gas estimation"
 
-        const tx = txBuilder
+        let txBuilder: TransactionBuilder = await initTxBuilder();
+        txBuilder = txBuilder
             .addOperation(contract.call(method, ...params))
             .setTimeout(TimeoutInfinite);
-
         // If you want to add memo
-        const memo = "Testing gas estimation"
         if (memo.length > 0) {
-            tx.addMemo(Memo.text(memo));
+            txBuilder = txBuilder.addMemo(Memo.text(memo));
         }
-        const raw = tx.build();
+        const tx: Transaction = txBuilder.build();
+        // console.log(tx);
 
-        consoleLogRef.current?.appendConsole("# Stimulating mint('GBHAOSNA7PJOGKWPAQ2VYAY4Y2VMA5LKOPQVCFRXJNJG5YXV4ELEX2GZ', 1000) ...");
-        let response: SorobanRpc.SimulateTransactionResponse = await sdk
-            .server
-            .simulateTransaction(raw);
+        consoleLogRef.current?.appendConsole(`# Stimulating mint('${sdk.util.mask(randomAddress)}', ${amt}) ...`);
 
-        if (SorobanRpc.isSimulationError(response)) {
-            throw new Error(`Simulation Error: ${response.error}`);
-        }
+        // const response: SorobanRpc.Api.SimulateTransactionResponse = await sdk.server.simulateTransaction(tx)
+        // if (SorobanRpc.Api.isSimulationError(response)) {
+        //     throw new Error(`Simulation Error: ${response.error}`);
+        // }
+        // const classicFeeNum = parseInt(raw.fee, 10) || 0;
+        // const minResourceFeeNum = parseInt(response.minResourceFee, 10) || 0;
+        // const fee = (classicFeeNum + minResourceFeeNum).toString();
 
-        const classicFeeNum = parseInt(raw.fee, 10) || 0;
-        const minResourceFeeNum = parseInt(response.minResourceFee, 10) || 0;
-        const fee = (classicFeeNum + minResourceFeeNum).toString();
+        const fee = await sdk.estimateGas(contractAddress, method, params);
+        const classicFeeNum = parseInt(tx.fee, 10) || 0;
+        const minResourceFeeNum = (parseInt(fee, 10) || 0) - classicFeeNum;
 
         consoleLogRef.current?.appendConsole(`# Stimulated Minimum fee = ${minResourceFeeNum}`);
         consoleLogRef.current?.appendConsole(`# Estimated fee = Stimulated Minimum fee + transaction fee = ${classicFeeNum} + ${minResourceFeeNum} = ${fee}`);
@@ -154,15 +155,15 @@ export const GasEstimation = ({ }: GasEstimationProps) => {
                 The provided code snippet is an example of estimating the gas
                 cost for invoking a specific method, &quot;mint&quot;, on a Soroban smart
                 Token written in Rust. The contract is identified by its address,
-                and the method takes two parameters: an <Code>address</Code> and an 
-                <Code>i128</Code> value. The code then simulates the transaction on 
-                the Soroban server and calculate a fee based on the estimation equation. 
+                and the method takes two parameters: an <Code>address</Code> and an
+                <Code>i128</Code> value. The code then simulates the transaction on
+                the Soroban server and calculate a fee based on the estimation equation.
                 This functionality is useful for developers to assess the gas cost  before executing
                 a method on a Soroban smart contract.
             </p>
             <CodeBlock code={sampleGasEstimate} />
             <div className="flex space-x-2 my-4">
-                <Button onClick={() => excute(handleGasEstimate)}>
+                <Button override={true} onClick={() => excute(handleGasEstimate)}>
                     Estimate Gas mint(address, int128)
                 </Button>
             </div>
@@ -179,10 +180,12 @@ soroban contract install \\
 `.trim()
 
 const code = `
+import { BASE_FEE, Contract, Memo, SorobanRpc, TimeoutInfinite, TransactionBuilder, xdr } from "stellar-sdk";
+
 export const getEstimatedFee = async (
     contractAddress: string,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
     memo: string,
     method: string,
     params: xdr.ScVal[],

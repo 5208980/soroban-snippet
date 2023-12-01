@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { Address, nativeToScVal, xdr } from 'soroban-client';
+import { Address, nativeToScVal, xdr } from 'stellar-sdk';
 
 /**
  * Converts the given amount in stroops to XLM (lumens).

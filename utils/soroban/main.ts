@@ -1,4 +1,21 @@
-import { Account, Address, Asset, Contract, Memo, Operation, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import {
+    Account,
+    Address,
+    Asset,
+    Contract,
+    Memo,
+    MemoType,
+    Operation,
+    SorobanRpc,
+    StrKey,
+    TimeoutInfinite,
+    Transaction,
+    TransactionBuilder,
+    hash,
+    xdr
+} from "stellar-sdk";
+const { Server, assembleTransaction } = SorobanRpc;
+
 import { NetworkDetails, RPC, getRPC } from "../network";
 import { Salt } from "./util";
 import ba from './binascii';
@@ -7,8 +24,8 @@ export const BASE_FEE = "100";
 export const XLM_DECIMALS = 7;
 export const PLACEHOLDER_ACCOUNT = "GC5S4C6LMT6BCCARUCK5MOMAS4H7OABFSZG2SPYOGUN2KIHN5HNNMCGL"
 
-export const getServer = (networkDetails: NetworkDetails) => 
-    new Server(getRPC(networkDetails) || RPC.Futurenet, {
+export const getServer = (networkDetails: NetworkDetails) =>
+    new Server(getRPC(networkDetails) || RPC.Testnet, {
         allowHttp: networkDetails.networkUrl.startsWith("http://"),
     });
 
@@ -24,7 +41,7 @@ export const getServer = (networkDetails: NetworkDetails) =>
 export const initaliseTransactionBuilder = async (
     publicKey: string,
     fee: string,
-    server: Server,
+    server: SorobanRpc.Server,
     networkPassphrase: string,
 ) => {
     const source = await server.getAccount(publicKey);
@@ -52,7 +69,7 @@ export const initaliseTransactionBuilder = async (
 export const getEstimatedFee = async (
     contractAddress: string,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
     memo: string,
     method: string,
     params: xdr.ScVal[],
@@ -71,7 +88,7 @@ export const getEstimatedFee = async (
 
     let response = await server.simulateTransaction(raw);
 
-    if (SorobanRpc.isSimulationError(response)) {
+    if (SorobanRpc.Api.isSimulationError(response)) {
         throw new Error(`Simulation Error: ${response.error}`);
     }
 
@@ -97,26 +114,30 @@ export const getEstimatedFee = async (
  */
 export const prepareContractCall = async (
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
     contractAddress: string,
     method: string,
     args: xdr.ScVal[]
-) => {
+): Promise<Transaction> => {
     const contract = new Contract(contractAddress);
     let tx: Transaction = txBuilder
         .addOperation(contract.call(method, ...args))
         .setTimeout(TimeoutInfinite)
         .build();
 
-    tx = await server.prepareTransaction(tx) as Transaction;
+    // const prepared = await server.prepareTransaction(tx) as Transaction;
+    const sim = await server.simulateTransaction(tx)
+    const prepared = assembleTransaction(tx, sim)
+        .setTimeout(0)
+        .build()
 
-    return tx;
+    return prepared;
 }
 
 export const uploadContractWasmOp = async (
     value: Buffer,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => {
     let hf: xdr.HostFunction = xdr.HostFunction.hostFunctionTypeUploadContractWasm(value);
     let op: any = Operation.invokeHostFunction({
@@ -129,7 +150,12 @@ export const uploadContractWasmOp = async (
         .setTimeout(TimeoutInfinite)
         .build();
 
-    const prepared = await server.prepareTransaction(tx) as Transaction;
+    // const prepared = await server.prepareTransaction(tx as Transaction);
+    const sim = await server.simulateTransaction(tx)
+    const prepared = assembleTransaction(tx, sim)
+        .setTimeout(0)
+        .build()
+
     return prepared;
 };
 
@@ -137,16 +163,13 @@ export const createContractOp = async (
     wasmId: string,
     source: Account,
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => {
     wasmId = ba.unhexlify(wasmId);
     const wasmIdBuffer = Buffer.from(wasmId, "ascii");
     const salt = Salt(32);
     const buff = Buffer.from(salt);
     const addr = new Address(source.accountId());
-    // const contractIdPreimage = xdr.ContractIdPreimage
-    // .contractIdPreimageFromAsset(xdr.Asset.assetTypeNative());
-
     const contractIdPreimageFromAddress = new xdr.ContractIdPreimageFromAddress({
         address: addr.toScAddress(),
         salt: buff,
@@ -159,6 +182,20 @@ export const createContractOp = async (
         executable: xdr.ContractExecutable.contractExecutableWasm(wasmIdBuffer),
     });
 
+    //#region predefined cotract id
+    const { passphrase } = await server.getNetwork();
+    const networkId = hash(Buffer.from(passphrase));
+
+    const hashIdPreimage = xdr.HashIdPreimage.envelopeTypeContractId(
+        new xdr.HashIdPreimageContractId({
+            networkId: networkId,
+            contractIdPreimage: contractIdPreimage,
+        })
+    );
+    const contractId = StrKey.encodeContract(hash(hashIdPreimage.toXDR()));
+    console.log("contractId: ", contractId);
+    //#endregion
+
     let hf: xdr.HostFunction = xdr.HostFunction
         .hostFunctionTypeCreateContract(createContract);
     let op: any = Operation.invokeHostFunction({
@@ -170,14 +207,18 @@ export const createContractOp = async (
         .setTimeout(TimeoutInfinite)
         .build();
 
-    tx = await server.prepareTransaction(tx) as Transaction;
+    // const prepared = await server.prepareTransaction(tx) as Transaction;
+    const sim = await server.simulateTransaction(tx)
+    const prepared = assembleTransaction(tx, sim)
+        .setTimeout(0)
+        .build()
 
-    return tx;
+    return prepared;
 }
 
 export const createWrapTokenOp = async (
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
     asset: Asset,
     contractId: string,
 ) => {
@@ -210,8 +251,13 @@ export const createWrapTokenOp = async (
         .setTimeout(TimeoutInfinite)
         .build();
 
-    tx = await server.prepareTransaction(tx) as Transaction;
-    return tx;
+    // const prepared = await server.prepareTransaction(tx) as Transaction;
+    const sim = await server.simulateTransaction(tx)
+    const prepared = assembleTransaction(tx, sim)
+        .setTimeout(0)
+        .build()
+
+    return prepared;
 }
 
 export const issueAssetToken = async (

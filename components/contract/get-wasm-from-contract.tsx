@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Contract, SorobanRpc, xdr } from "soroban-client";
-import { hexToByte, initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { BASE_FEE, Contract, SorobanRpc, xdr } from "stellar-sdk";
+import { hexToByte, initaliseTransactionBuilder, signTransactionWithWallet } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
 import { Header3 } from "@/components/shared/header-3";
 import { UList } from "@/components/shared/u-list";
-import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
@@ -73,14 +72,14 @@ export const GetWasmFromContract = ({ }: GetWasmFromContractProps) => {
             })
         );
 
-        let ledgerEntries: SorobanRpc.GetLedgerEntriesResponse = await sdk.server.getLedgerEntries(contractData);
+        let ledgerEntries: SorobanRpc.Api.GetLedgerEntriesResponse = await sdk.server.getLedgerEntries(contractData);
 
         
         if (ledgerEntries == null || ledgerEntries.entries == null || ledgerEntries.entries.length == 0) {
             return null;
         }
 
-        let ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+        let ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
         const codeData = ledgerEntry.val.contractData();
 
         const contractInstance = codeData.val().instance();
@@ -100,7 +99,7 @@ export const GetWasmFromContract = ({ }: GetWasmFromContractProps) => {
             return null;
         }
 
-        ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+        ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
         const codeEntry = ledgerEntry.val;
         const wasmCode = codeEntry.contractCode().code().toString('hex');
         const wasmBytes = hexToByte(wasmCode)
@@ -191,11 +190,11 @@ export const GetWasmFromContract = ({ }: GetWasmFromContractProps) => {
 }
 
 const code = `
-import { BASE_FEE, Contract, SorobanRpc, xdr } from "soroban-client";
+import { BASE_FEE, Contract, SorobanRpc, xdr } from "stellar-sdk";
 
 const getContractWasm = async (
     contractAddress: string,
-    server: Server,
+    server: SorobanRpc.Server,
 ) => Promise<Blob> {
     // Step 1: Get WASM Hash (ID) from contract
     const contractData = xdr.LedgerKey.contractData(
@@ -206,13 +205,13 @@ const getContractWasm = async (
         })
     );
 
-    let ledgerEntries: SorobanRpc.GetLedgerEntriesResponse = await sdk.server.getLedgerEntries(contractData);
+    let ledgerEntries: SorobanRpc.Api.GetLedgerEntriesResponse = await server.getLedgerEntries(contractData);
 
     if (ledgerEntries == null || ledgerEntries.entries == null || ledgerEntries.entries.length == 0) {
         return null;
     }
 
-    let ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+    let ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
     const codeData = ledgerEntry.val.contractData();
 
     const contractInstance = codeData.val().instance();
@@ -231,7 +230,7 @@ const getContractWasm = async (
         return null;
     }
 
-    ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+    ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
     const codeEntry = ledgerEntry.val;
     const wasmCode = codeEntry.contractCode().code().toString('hex');
     const wasmBytes = hexToByte(wasmCode)
@@ -256,13 +255,14 @@ export function hexToByte(hexString: string) {
 `.trim();
 
 const sampleGetContractWasm = `
-import { Server } from "soroban-client";
+import { SorobanRpc } from "stellar-sdk";
+const { Server } = SorobanRpc;
 
 // This connects to the testnet, but you can change it to appriopriate network
-const server: Server = new Server("https://soroban-testnet.stellar.org/", { 
+const server: SorobanRpc.Server = new Server("https://soroban-testnet.stellar.org/", { 
                             allowHttp: true, });
 
-const contractAddress: string = "CDES3YLWWIWGMWAT4IHYUB3B4MNQMPHE3UYBMWDLONUOEY3VRNISEQHK";
+const contractAddress: string = ${getContract()};
 
 // Here is the main part of the code
 const wasmFile: Blob = await getContractWasm(contractAddress, server);

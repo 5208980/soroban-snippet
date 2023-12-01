@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getUserInfo } from "@stellar/freighter-api";
-import { Asset, BASE_FEE, hash, xdr } from "soroban-client";
+import { Asset, BASE_FEE, hash, xdr } from "stellar-sdk";
 import { createHash } from "crypto";
 import { initaliseTransactionBuilder, signTransactionWithWallet } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
@@ -108,7 +108,7 @@ export const GetAssetContract = ({ }: GetAssetContractProps) => {
                 This section covers how to obtain a Soroban contract from a Wrapped Stellar Asset.
                 The first section will cover the implementation of how Stellar Assets are converted
                 to Soroban contracts, and the second section shows an abstraction to the implementation
-                available by the `Asset` class of the `soroban-client` library. Note when calling
+                available by the `Asset` class of the `stellar-sdk` library. Note when calling
                 these methods, the contract are <b>hypothetical</b> and thus may not exist if not wrapped
                 or created.
             </div>
@@ -156,14 +156,14 @@ export const GetAssetContract = ({ }: GetAssetContractProps) => {
 }
 
 const codeAsset = `
-import { Asset, xdr } from "soroban-client";
+import { Asset, xdr } from "stellar-sdk";
 
 const asset = Asset.native();
 const contractId: string = asset.contractId();
 `.trim()
 
 const codePreimage = `
-import { Asset, hash, xdr } from "soroban-client";
+import { Asset, hash, xdr } from "stellar-sdk";
 
 const getAssetContractId = (
     asset: Asset,
@@ -188,7 +188,7 @@ const getAssetContractId = (
 `.trim();
 
 const sampleUploadContractWasmOp = `
-import { Asset, hash, Networks, xdr } from "soroban-client";
+import { Asset, hash, Networks, xdr } from "stellar-sdk";
 
 // Setup server to determine contract Id
 const server: Server = new Server("https://soroban-testnet.stellar.org/", { 

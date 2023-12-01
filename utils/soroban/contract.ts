@@ -1,5 +1,8 @@
-import { Address, Contract, Durability, Keypair, Memo, MemoHash, Networks, Operation, Server, SorobanDataBuilder, SorobanRpc, Transaction, TransactionBuilder, assembleTransaction, xdr } from "soroban-client";
+// import { Address, Contract, Durability, Keypair, Memo, MemoHash, Networks, Operation, Server, SorobanDataBuilder, SorobanRpc, Transaction, TransactionBuilder, assembleTransaction, xdr } from "stellar-sdk";
 import { BASE_FEE } from "./main";
+
+import { Address, Contract, Memo, MemoHash, Operation, SorobanDataBuilder, SorobanRpc, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
+const { Durability, assembleTransaction } = SorobanRpc;
 
 export const decodeContractSpecBuffer = async (buffer: ArrayBuffer) => {
     const bufferData = new Uint8Array(buffer);
@@ -39,7 +42,7 @@ const tryDecodeEntry = (bufferData: Uint8Array, offset: number) => {
 
 export async function restoreContract(
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
     c: Contract,
 ): Promise<Transaction> {
     const network = (await server.getNetwork()).passphrase
@@ -59,45 +62,45 @@ export async function restoreContract(
 
 export const bumpContractInstance = async (
     txBuilder: TransactionBuilder,
-    server: Server,
+    server: SorobanRpc.Server,
     contractAddress: string,
     ledgersToExpire: number,
     publicKey: string,
 ): Promise<Transaction> => {
     const contract = new Address(contractAddress);
-    // const ledgerKey: xdr.LedgerKey = xdr.LedgerKey.contractData(
-    //     new xdr.LedgerKeyContractData({
-    //         contract: contract.toScAddress(),
-    //         key: xdr.ScVal.scvLedgerKeyContractInstance(),
-    //         durability: xdr.ContractDataDurability.persistent(),
-    //     })
-    // );
+    const ledgerKey: xdr.LedgerKey = xdr.LedgerKey.contractData(
+        new xdr.LedgerKeyContractData({
+            contract: contract.toScAddress(),
+            key: xdr.ScVal.scvLedgerKeyContractInstance(),
+            durability: xdr.ContractDataDurability.persistent(),
+        })
+    );
 
-    // const soroban_data = new SorobanDataBuilder()
-    //     .setReadOnly([ledgerKey])
-    //     .build()
+    const sorobanData = new SorobanDataBuilder()
+        .setReadOnly([ledgerKey])
+        .build()
 
     const network = (await server.getNetwork()).passphrase;
     const key = xdr.ScVal.scvLedgerKeyContractInstance()
     const contractData = await server.getContractData(contract, key, Durability.Persistent)
     const hash = contractData.val.contractData().val().instance().executable().wasmHash()
 
-    const sorobanData = new SorobanDataBuilder()
-        .setReadWrite([
-            xdr.LedgerKey.contractCode(
-                new xdr.LedgerKeyContractCode({
-                    hash,
-                })
-            ),
-            xdr.LedgerKey.contractData(
-                new xdr.LedgerKeyContractData({
-                    contract: contract.toScAddress(),
-                    key,
-                    durability: xdr.ContractDataDurability.persistent(),
-                })
-            )
-        ])
-        .build()
+    // const sorobanData = new SorobanDataBuilder()
+    //     .setReadWrite([
+    //         xdr.LedgerKey.contractCode(
+    //             new xdr.LedgerKeyContractCode({
+    //                 hash,
+    //             })
+    //         ),
+    //         xdr.LedgerKey.contractData(
+    //             new xdr.LedgerKeyContractData({
+    //                 contract: contract.toScAddress(),
+    //                 key,
+    //                 durability: xdr.ContractDataDurability.persistent(),
+    //             })
+    //         )
+    //     ])
+    //     .build()
 
     let tx: Transaction = txBuilder
         .addOperation(Operation.bumpFootprintExpiration({ ledgersToExpire: 10 }))
@@ -109,7 +112,7 @@ export const bumpContractInstance = async (
     // tx = await server.prepareTransaction(tx) as Transaction;
     const sim = await server.simulateTransaction(tx)
     const acc = new Address(publicKey);
-    tx = assembleTransaction(tx, network, sim)
+    tx = assembleTransaction(tx, sim)
         .addMemo(new Memo(MemoHash, acc.toScAddress().accountId().value()))
         // .setExtraSigners([kp.publicKey()])
         .setTimeout(0)

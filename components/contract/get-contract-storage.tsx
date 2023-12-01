@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "soroban-client";
+import { Address, BASE_FEE, Contract, SorobanRpc, StrKey, scValToNative, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -73,7 +73,7 @@ export const GetContractStorage = ({ }: GetContractStorageProps) => {
 
         // Retrieve ledger entries from the Soroban server based on the contract data
         const ledgerEntries = await sdk.server.getLedgerEntries(contractData);
-        const ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+        const ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
         const codeData = ledgerEntry.val.contractData();
 
         // Extract the contract instance from the contract data
@@ -82,19 +82,30 @@ export const GetContractStorage = ({ }: GetContractStorageProps) => {
         // Extract the contract storage as an array of Soroban Map Entries
         const contractStorage: xdr.ScMapEntry[] = contractInstance.storage() || [];
 
-        const storage = convertStorage(contractStorage);
-        storage.forEach(el => {
+        (convertStorage(contractStorage) || []).forEach(el => {
+            // console.log(el)
             consoleLogRef.current?.appendConsole(`${el.key} (${el.keyType}): ${JSON.stringify(el.value)} (${el.valueType})`);
         });
     }
 
     const convertStorage = (storage: xdr.ScMapEntry[]): any[] =>
         storage.map(el => ({
-            key: scValToNative(el.key()).toString(),
+            key: scValToString(el.key()).toString(),
             keyType: el.key().switch().name,
-            value: scValToNative(el.val()),
+            value: scValToString(el.val()),
             valueType: el.val().switch().name,
         }))
+
+    const scValToString = (el: xdr.ScVal): any => {
+        switch (el.switch().name) {
+            case xdr.ScValType.scvAddress().name:
+                return StrKey.encodeEd25519PublicKey(el.address().accountId().ed25519());
+            case xdr.ScValType.scvMap().name:
+                return JSON.stringify(scValToNative(el))
+        }
+
+        return scValToNative(el).toString()
+    }
 
     return (
         <div className="pb-32">
@@ -132,7 +143,7 @@ export const GetContractStorage = ({ }: GetContractStorageProps) => {
                 admin in the contract instance storage.
             </p>
 
-            <Header2>contractData (soroban-client)</Header2>
+            <Header2>contractData (stellar-sdk)</Header2>
             <CodeBlock code={code} />
             <UList>
                 <li>
@@ -189,7 +200,11 @@ pub fn write_administrator(e: &Env, id: &Address) {
 `.trim()
 
 const code = `
-import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "soroban-client";
+import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "stellar-sdk";
+const { Server } = SorobanRpc;
+
+const server: SorobanRpc.Server = new Server("https://soroban-testnet.stellar.org/", { 
+                            allowHttp: true, });
 
 const getContractStorage = async (contractAddress: string) => {
     // Create a LedgerKey for fetching contract data
@@ -201,8 +216,8 @@ const getContractStorage = async (contractAddress: string) => {
         })
     );
 
-    const ledgerEntries = await sdk.server.getLedgerEntries(contractData);
-    const ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.LedgerEntryResult;
+    const ledgerEntries = await server.getLedgerEntries(contractData);
+    const ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
     const codeData = ledgerEntry.val.contractData();
 
     // Extract the contract instance from the contract data
@@ -224,9 +239,9 @@ contractStorage.map(storage => ({
 `.trim()
 
 const sampleContractStorage = `
-import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "soroban-client";
+import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "stellar-sdk";
 
-const contractAddress: string = "CAEKJZUWNRUGTDINKFPYF5DVD5NIDJVROGL4A7P6KE6ZSH7SWIRGKZBM";
+const contractAddress: string = "${getContract()}";
 
 // Here is the main part of the code
 const storage: xdr.ScMapEntry[] = await getContractStorage(contractAddress);

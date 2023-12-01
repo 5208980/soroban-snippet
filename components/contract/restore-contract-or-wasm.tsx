@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getUserInfo } from "@stellar/freighter-api";
-import { Address, BASE_FEE, Durability, Memo, MemoHash, Operation, Server, SorobanDataBuilder, SorobanRpc, Transaction, TransactionBuilder, assembleTransaction, xdr } from "soroban-client";
+import { Address, BASE_FEE, Contract, Memo, MemoHash, Operation, SorobanDataBuilder, SorobanRpc, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { initaliseTransactionBuilder, signTransactionWithWallet, submitTx } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -14,6 +14,7 @@ import { ConsoleLog } from "@/components/shared/console-log";
 import { Title } from "@/components/shared/title";
 import { getContract } from "@/utils/util";
 import { Header3 } from "@/components/shared/header-3";
+const { Server, assembleTransaction } = SorobanRpc;
 
 export interface RestoreExpiredContractOrWasmProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -58,12 +59,10 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
 
     const bumpContractInstance = async (
         txBuilder: TransactionBuilder,
-        server: Server,
+        server: SorobanRpc.Server,
         contractAddress: string,
         publicKey: string,
     ): Promise<Transaction> => {
-        const contract = new Address(contractAddress);
-
         // Read Only
         // const ledgerKey: xdr.LedgerKey = xdr.LedgerKey.contractData(
         //     new xdr.LedgerKeyContractData({
@@ -79,21 +78,26 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
 
         // Read Write
         const network = (await server.getNetwork()).passphrase;
-        const key = xdr.ScVal.scvLedgerKeyContractInstance()
-        const contractData = await server.getContractData(contract, key, Durability.Persistent)
-        const hash = contractData.val.contractData().val().instance().executable().wasmHash()
+        // const key = xdr.ScVal.scvLedgerKeyContractInstance()
+        // const contractData = await server.getContractData(contract, key, SorobanRpc..Persistent)
+        // const hash = contractData.val.contractData().val().instance().executable().wasmHash()
+        const ledgerKey = xdr.LedgerKey.contractData(
+            new xdr.LedgerKeyContractData({
+                contract: new Contract(contractAddress).address().toScAddress(),
+                key: xdr.ScVal.scvLedgerKeyContractInstance(),
+                durability: xdr.ContractDataDurability.persistent()
+            })
+        );
+
+        const ledgerEntries = await sdk.server.getLedgerEntries(ledgerKey);
+        const ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
+        const hash = ledgerEntry.val.contractData().val().instance().executable().wasmHash(); 
         const sorobanData = new SorobanDataBuilder()
             .setReadWrite([
                 xdr.LedgerKey.contractCode(
                     new xdr.LedgerKeyContractCode({ hash })
                 ),
-                xdr.LedgerKey.contractData(
-                    new xdr.LedgerKeyContractData({
-                        contract: contract.toScAddress(),
-                        key,
-                        durability: xdr.ContractDataDurability.persistent(),
-                    })
-                )
+                ledgerKey
             ])
             .build()
 
@@ -108,7 +112,7 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
         // Manual prepareTransaction as server.prepareTransaction throw transaction simulation failed
         const sim = await server.simulateTransaction(tx)
         const acc = new Address(publicKey);
-        tx = assembleTransaction(tx, network, sim)
+        tx = assembleTransaction(tx, sim)
             .addMemo(new Memo(MemoHash, acc.toScAddress().accountId().value()))
             .setTimeout(0)
             .build()
@@ -124,9 +128,10 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
         consoleLogRef.current?.appendConsole("Creating restore footprint for contract ...");
         const tx: Transaction = await bumpContractInstance(
             txBuilder, sdk.server, contractAddress, publicKey);
+        console.log(tx);
 
         const signedTx = await sign(tx.toXDR());
-        const result: SorobanRpc.GetTransactionResponse = await submitTx(
+        const result: SorobanRpc.Api.GetTransactionResponse = await submitTx(
             signedTx.tx, sdk.server, sdk.selectedNetwork);
 
         console.log(result);
@@ -171,7 +176,7 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
                     <Header3>Transaction Building</Header3>
                     <p>
                         Add an operation to restore the footprint using <Code>Operation.restoreFootprint({ })</Code>
-                         and prepare the transaction for signing and submission to Soroban.
+                        and prepare the transaction for signing and submission to Soroban.
                     </p>
                 </li>
             </UList>
@@ -190,7 +195,7 @@ export const RestoreExpiredContractOrWasm = ({ }: RestoreExpiredContractOrWasmPr
 }
 
 const code = `
-import { Address, BASE_FEE, Durability, Memo, MemoHash, Operation, Server, SorobanDataBuilder, Transaction, TransactionBuilder, assembleTransaction, xdr } from "soroban-client";
+import { Address, BASE_FEE, Durability, Memo, MemoHash, Operation, Server, SorobanDataBuilder, Transaction, TransactionBuilder, assembleTransaction, xdr } from "stellar-sdk";
 
 const bumpContractInstance = async (
     txBuilder: TransactionBuilder,
@@ -215,21 +220,27 @@ const bumpContractInstance = async (
 
     // Read Write
     const network = (await server.getNetwork()).passphrase;
-    const key = xdr.ScVal.scvLedgerKeyContractInstance()
-    const contractData = await server.getContractData(contract, key, Durability.Persistent)
-    const hash = contractData.val.contractData().val().instance().executable().wasmHash()
+    // Using server to get contract data
+    // const key = xdr.ScVal.scvLedgerKeyContractInstance()
+    // const contractData = await server.getContractData(contract, key, Durability.Persistent)
+    // const hash = contractData.val.contractData().val().instance().executable().wasmHash()
+    const ledgerKey = xdr.LedgerKey.contractData(
+        new xdr.LedgerKeyContractData({
+            contract: new Contract(contractAddress).address().toScAddress(),
+            key: xdr.ScVal.scvLedgerKeyContractInstance(),
+            durability: xdr.ContractDataDurability.persistent()
+        })
+    );
+
+    const ledgerEntries = await sdk.server.getLedgerEntries(ledgerKey);
+    const ledgerEntry = ledgerEntries.entries[0] as SorobanRpc.Api.LedgerEntryResult;
+    const hash = ledgerEntry.val.contractData().val().instance().executable().wasmHash(); 
     const sorobanData = new SorobanDataBuilder()
         .setReadWrite([
             xdr.LedgerKey.contractCode(
                 new xdr.LedgerKeyContractCode({ hash })
             ),
-            xdr.LedgerKey.contractData(
-                new xdr.LedgerKeyContractData({
-                    contract: contract.toScAddress(),
-                    key,
-                    durability: xdr.ContractDataDurability.persistent(),
-                })
-            )
+            ledgerKey
         ])
         .build()
 
@@ -254,7 +265,7 @@ const bumpContractInstance = async (
 `.trim();
 
 const sampleRestoreContract = `
-import { Operation, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Operation, Server, SorobanRpc, TimeoutInfinite, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 import { signTransaction } from "@stellar/freighter-api";
 
 // fee should be higher than the BASE_FEE

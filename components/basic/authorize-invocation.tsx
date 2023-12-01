@@ -2,19 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { Account, Address, BASE_FEE, Contract, Keypair, Memo, Networks, Operation, SorobanRpc, TimeoutInfinite, TransactionBuilder, authorizeInvocation, xdr } from "soroban-client";
-import { initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { Address, BASE_FEE, Contract, SorobanRpc, TimeoutInfinite, TransactionBuilder, xdr } from "stellar-sdk";
+import { initaliseTransactionBuilder, signTransactionWithWallet } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
 import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
 import { Title } from "@/components/shared/title";
 import { getContract } from "@/utils/util";
-import { Adamina } from "next/font/google";
 
 export interface AuthorizeInvocationProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -88,16 +86,16 @@ export const AuthorizeInvocation = ({ }: AuthorizeInvocationProps) => {
             .setTimeout(TimeoutInfinite)
             .build();
         // Prepare the transaction, with 1.0.0-beta.2 this is a TransactionBuilder object
-        let simTx: SorobanRpc.SimulateTransactionResponse = await sdk.server.simulateTransaction(tx);
+        let simTx: SorobanRpc.Api.SimulateTransactionResponse = await sdk.server.simulateTransaction(tx);
 
-        if (SorobanRpc.isSimulationError(simTx)) {
+        if (SorobanRpc.Api.isSimulationError(simTx)) {
             throw new Error(simTx.error)
         }
 
         console.log(`Now we're authorizing and signing...`);
         // We should have two entries here, one for the source of the transaction,
         // and one for the second address require_auth() in the SC. @george
-        simTx = simTx as SorobanRpc.SimulateTransactionSuccessResponse;
+        simTx = simTx as SorobanRpc.Api.SimulateTransactionSuccessResponse;
         const entries = simTx.result?.auth || [];
         console.log(entries)
         // assert(entries.length === 2); // sanity check

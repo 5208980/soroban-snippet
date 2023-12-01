@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
 import { getUserInfo } from "@stellar/freighter-api";
-import { Asset, BASE_FEE, Keypair, SorobanRpc, xdr } from "soroban-client";
+import { Asset, BASE_FEE, Keypair, SorobanRpc, xdr } from "stellar-sdk";
 import { assetPayment, changeTrust, initaliseTransactionBuilder, signTransactionWithWallet, submitTx, tipAccount } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
@@ -102,7 +102,7 @@ export const CreateStellarAsset = ({ }: CreateStellarAssetProps) => {
     ): Promise<boolean> => {
         const txBuilder = await initTxBuilder();
         const tx = await changeTrust(
-            txBuilder, asset, limit, publicKey);
+            txBuilder, asset, limit);
         const signedTx = await signTransactionWithWallet(
             tx.toXDR(), publicKey!, sdk.selectedNetwork);
 
@@ -129,7 +129,7 @@ export const CreateStellarAsset = ({ }: CreateStellarAssetProps) => {
             const gtr = await submitTx(tx, sdk.server, sdk.selectedNetwork);
 
             // Get the contractId
-            if (gtr.status == SorobanRpc.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
+            if (gtr.status == SorobanRpc.Api.GetTransactionStatus.SUCCESS && gtr.resultMetaXdr) {
                 console.log("Transaction successful:", gtr.status)
                 const buff = Buffer.from(gtr.resultMetaXdr.toXDR("base64"), "base64");
                 const txMeta = xdr.TransactionMeta.fromXDR(buff);
@@ -295,7 +295,7 @@ soroban lab token wrap \\
 `.trim()
 
 const codeTrustLine = `
-import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 export const changeTrust = async (
     txBuilder: TransactionBuilder,
@@ -318,7 +318,7 @@ export const changeTrust = async (
 `.trim();
 
 const codeFundAsset = `
-import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 export const assetPayment = async (
     txBuilder: TransactionBuilder,
@@ -342,7 +342,7 @@ export const assetPayment = async (
 
 
 const sampleCreateAsset = `
-import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "soroban-client";
+import { Asset, Operation, Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 // See the method for createAssetTrustline: ${""}
 // See the method for fundAsset: ${""}

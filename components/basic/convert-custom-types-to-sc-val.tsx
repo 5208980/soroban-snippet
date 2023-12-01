@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSorosanSDK } from "@sorosan-sdk/react";
-import { getPublicKey, getUserInfo, signTransaction } from "@stellar/freighter-api";
-import { BASE_FEE, Contract, SorobanRpc, scValToNative, xdr } from "soroban-client";
-import { hexToByte, initaliseTransactionBuilder, signTransactionWithWallet, submitTxAndGetWasmId, uploadContractWasmOp } from "@/utils/soroban";
+import { getUserInfo } from "@stellar/freighter-api";
+import { BASE_FEE, scValToNative, xdr } from "stellar-sdk";
+import { initaliseTransactionBuilder, signTransactionWithWallet } from "@/utils/soroban";
 import { CodeBlock } from "@/components/shared/code-block";
 import { Header2 } from "@/components/shared/header-2";
-import { Header3 } from "@/components/shared/header-3";
-import { UList } from "@/components/shared/u-list";
 import { Code } from "@/components/shared/code";
 import { Button } from "@/components/shared/button";
 import { ConsoleLog } from "../shared/console-log";
@@ -197,7 +195,7 @@ pub enum TimeBoundKind {
 `.trim();
 
 const tsEnumBeforeAfter = `
-import { xdr } from "soroban-client";
+import { xdr } from "stellar-sdk";
 
 // Javacript/Typescript counterpart
 const timeBoundKindBefore: xdr.ScVal = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol("Before")]);
@@ -222,7 +220,7 @@ pub struct State(pub TimeBoundKind, pub u64);
 
 
 const tsStructUnamed = `
-import { xdr } from "soroban-client";
+import { xdr } from "stellar-sdk";
 
 const timeBoundKindAfter: xdr.ScVal = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol("After")]);
 const timeStamp: xdr.ScVal = xdr.ScVal.scvU64(new xdr.Uint64(100000));
@@ -233,7 +231,7 @@ const timebound = xdr.ScVal.scvVec([timeBoundKindAfter, timeStamp]);
 `.trim();
 
 const tsStruct = `
-import { xdr } from "soroban-client";
+import { xdr } from "stellar-sdk";
 
 // This is from the Enum section since kind is an enum call TimeBoundKind
 const timeBoundkindVal: xdr.ScVal = xdr.ScVal.scvVec([xdr.ScVal.scvSymbol("Before")]);

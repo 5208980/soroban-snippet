@@ -19,10 +19,12 @@ import { ContractEvents } from "@/components/basic/contract-events";
 import { CreateWrappedAsset } from "@/components/asset/create-wrapped-asset";
 import { CreateStellarAsset } from "@/components/asset/create-stellar-asset";
 import { useRouter, useSearchParams } from 'next/navigation'
-import { hash } from "soroban-client";
+import { hash } from "stellar-sdk";
 import { Spinner } from "@/components/shared/spinner";
 import { Collapsible } from "@/components/shared/collapsible";
 import { ValidationStellarInformation } from "@/components/basic/validation-stellar-information";
+import { ConvertClientSDK } from "../basic/convert-client-sdk";
+import { PRNG } from "../basic/prng";
 
 export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -39,6 +41,8 @@ const sidebarData = {
             
             { name: "Validating Stellar/Soroban Information", spec: <ValidationStellarInformation /> },
             { name: "Emitting and Retrieving Events", spec: <ContractEvents /> },
+            { name: "soroban-client and stellar-sdk", spec: <ConvertClientSDK /> },
+            { name: "RNG in Soroban contracts", spec: <PRNG /> },
             // { name: "Authorise Invocation", spec: <AuthorizeInvocation /> },
         ]
     },

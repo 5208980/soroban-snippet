@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export interface CollapsibleProps
@@ -42,7 +43,10 @@ export const Collapsible = ({
         <label>
             <input className="peer absolute scale-0" type="checkbox" onChange={handleOnChange} checked={open} />
             <span className="block max-h-14 overflow-hidden rounded-lg px-4 py-0 transition-all duration-300 peer-checked:max-h-full">
-                <h3 className="flex h-14 px-4 uppercase text-main-secondary font-bold tracking-wider cursor-pointer items-center">{title}</h3>
+                <h3 className="flex item-center justify-between h-14 px-4 uppercase text-main-secondary font-bold tracking-wider cursor-pointer">
+                    <div>{title}</div>
+                    {open ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                </h3>
                 <ul>
                     {items.map((item, index) => (
                         <li className={`px-4 py-2 flex items-center text-main rounded-md hover:bg-blue-100 cursor-pointer
