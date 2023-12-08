@@ -30,7 +30,7 @@ export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
 }
 
-const sidebarData = {
+export const sidebarData = {
     basic: {
         items: [
             { name: "Connecting to Soroban", spec: <ConnectToSoroban /> },
@@ -105,7 +105,7 @@ export const Main = ({ children, }: MainProps) => {
 
     return (
         <div className="grid grid-cols-12 min-h-screen">
-            <div className="col-span-12 lg:col-span-3 border-r bg-main">
+            <div className="col-span-12 lg:col-span-3 border-r bg-main hidden lg:block">
                 <div className="">
                     <div className="max-h-screen overflow-y-scroll scrollbar py-4 pb-32">
                         {Object.entries(sidebarData).map(([category, { items }], index) => (

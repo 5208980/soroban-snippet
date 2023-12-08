@@ -1,29 +1,76 @@
-import { ConnectWallet } from "../shared/connect-wallet"
-import { NetworkButton } from "./network-button"
+"use client"
+
+import { Button } from "@/components/shared/button"
+import { ConnectWallet } from "@/components/shared/connect-wallet"
+import { sidebarData } from "@/components/main/main"
+import { NetworkButton } from "@/components/main/network-button"
+import { Collapsible } from "../shared/collapsible"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { hash } from "stellar-sdk"
 
 export interface NavBarProps
     extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const NavBar = ({ ...props }: NavBarProps) => {
+    const router = useRouter();
+    const [show, setShow] = useState<boolean>(false);
+    const [forceHide, setForceHide] = useState<boolean>(true);
+
+    useEffect(() => {
+        const updateWindowDimensions = () => {
+            // If not mobile, then force hide on nav sidebar
+            // console.log(window.innerWidth);
+            if (window.innerWidth >= 1024) {
+                setForceHide(false);
+            } else {
+                setForceHide(true);
+            }
+        };
+
+        window.addEventListener("resize", updateWindowDimensions);
+        return () => window.removeEventListener("resize", updateWindowDimensions)
+    }, []);
+
+    const handleSidebarClick = (item: any) => {
+        const title = hash(Buffer.from(item.name)).toString("hex")
+        router.push(`/?title=${title}`);
+        window.location.reload();
+    }
+
     return (
         <nav className="bg-main z-50 border-b">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto py-2">
                 <a href="#" className="flex items-center rtl:space-x-reverse justify-center">
                     <span className="text-2xl font-bold text-main-secondary">Soroban Snippet</span>
                 </a>
-                <button data-collapse-toggle="navbar-default" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200" aria-expanded="false">
-                    <span className="sr-only">Open main menu</span>
-                    <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1h15M1 7h15M1 13h15" />
-                    </svg>
-                </button>
-                <div className="hidden w-full md:block md:w-auto" id="navbar-default">
+
+                <div className="inline-flex items-center justify-center lg:hidden">
+                    <div className="flex items-center space-x-4">
+                        <Button override={true} onClick={() => setShow(!show)}>Open</Button>
+                        <NetworkButton />
+                        <ConnectWallet />
+                    </div>
+                </div>
+                <div className="hidden w-full lg:block md:w-auto" id="navbar-default">
                     <div className="flex items-center space-x-4">
                         <NetworkButton />
                         <ConnectWallet />
                     </div>
                 </div>
+            </div>
+            <div className={`max-h-screen overflow-y-scroll scrollbar py-4 pb-32 text-red-500 ${(show && forceHide) ? "block" : "hidden"}`}>
+                {Object.entries(sidebarData).map(([category, { items }], index) => (
+                    <div key={category} >
+                        <Collapsible
+                            // checked={index === 0}
+                            isSelected={"false"}
+                            title={category}
+                            items={items}
+                            handleOnClick={handleSidebarClick} />
+                    </div>
+                ))}
             </div>
         </nav>
     )
