@@ -25,6 +25,8 @@ import { Collapsible } from "@/components/shared/collapsible";
 import { ValidationStellarInformation } from "@/components/basic/validation-stellar-information";
 import { ConvertClientSDK } from "../basic/convert-client-sdk";
 import { PRNG } from "../basic/prng";
+import { MnemonicWallet } from "../basic/key-phrase";
+import { BumpingContract } from "../contract/bumping-contract";
 
 export interface MainProps
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -38,11 +40,12 @@ export const sidebarData = {
             { name: "Practical Guide Custom Types to xdr in JavaScript/TypeScript", spec: <ConvertCustomTypeToScVal /> },
             { name: "Submit Transaction Process", spec: <SubmitTransactionProcess /> },
             { name: "Difference Transaction and Transaction Envelope", spec: <ConvertXDRToTransactionEnvelope /> },
-            
+
             { name: "Validating Stellar/Soroban Information", spec: <ValidationStellarInformation /> },
             { name: "Emitting and Retrieving Events", spec: <ContractEvents /> },
             { name: "soroban-client and stellar-sdk", spec: <ConvertClientSDK /> },
             { name: "RNG in Soroban contracts", spec: <PRNG /> },
+            { name: "Generating and Deriving Stellar Accounts with Seed Phrases", spec: <MnemonicWallet />}
             // { name: "Authorise Invocation", spec: <AuthorizeInvocation /> },
         ]
     },
@@ -55,6 +58,8 @@ export const sidebarData = {
             { name: "Access Soroban Contract Storage State", spec: <GetContractStorage /> },
             { name: "Construct Soroban Contract ABI in JavaScript/TypeScript", spec: <GetContractABI /> },
             { name: "Restore Expired Contract/WASM", spec: <RestoreExpiredContractOrWasm /> },
+            { name: "Bumping Contract", spec: <BumpingContract /> },
+
         ]
     },
     asset: {
