@@ -16,6 +16,8 @@ export const getIncrementContract = (network: string = "testnet"): string => {
 
 export const getRandContract = (network: string = "testnet"): string => {
     switch (network.toLowerCase()) {
+        case 'futurenet':
+            return "";
         case 'testnet':
         default:
             return 'CDLQBWV77ZYL6RDEMOE5HYVANPL4QCL322HDP6LCCRRDCAQOXAIZHXCD';

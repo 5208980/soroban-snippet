@@ -50,7 +50,7 @@ export async function restoreContract(
         .setTimeout(1000)
         .setNetworkPassphrase(network)
         .setSorobanData(new SorobanDataBuilder()
-            .setReadWrite(c.getFootprint())
+            .setReadWrite([c.getFootprint()])
             .build())
         .addOperation(Operation.restoreFootprint({}))
         .build();
@@ -103,7 +103,7 @@ export const bumpContractInstance = async (
     //     .build()
 
     let tx: Transaction = txBuilder
-        .addOperation(Operation.bumpFootprintExpiration({ ledgersToExpire: 10 }))
+        .addOperation(Operation.extendFootprintTtl({ source: publicKey, extendTo: ledgersToExpire }))
         .setNetworkPassphrase(network)
         .setSorobanData(sorobanData)
         .setTimeout(0)

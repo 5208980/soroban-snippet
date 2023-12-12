@@ -92,7 +92,7 @@ export const ValidationStellarInformation = ({ }: ValidationStellarInformationPr
 
         switch (tx.operations[0].type) {
             case 'invokeHostFunction':
-            case 'bumpFootprintExpiration':
+            case 'extendFootprintTtl':
             case 'restoreFootprint':
                 return true;
 

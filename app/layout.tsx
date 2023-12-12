@@ -7,6 +7,7 @@ import { SorosanProvider } from '@sorosan-sdk/react'
 import { NetworkProvider, networkType, useSorosanNetwork } from '@/components/shared/network-provider'
 import { useEffect, useState } from 'react'
 import { NavBar } from '@/components/main/nav-bar'
+import { Message } from '@/components/shared/message'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,6 +37,7 @@ function WrapRoot({ children }: { children: React.ReactNode }) {
 
   return (
     <div>
+      <Message>(12/12/2023) Please not Soroban Upcoming Testnet reset will be on 18/12/2023. Contract interaction until then may be broken, but we&apos;ll fix it after the preview release and Testnet reset.</Message>
       <NavBar />
       <SorosanProvider key={key} network={(network.selectedNetwork as networkType) || "testnet"}>
         <div className="">
